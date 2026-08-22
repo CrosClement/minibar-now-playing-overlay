@@ -124,6 +124,10 @@ Nel menu si chiamano **Overlay**, **Docked to an edge** (agganciata a un bordo) 
 | Aspetti disponibili | barretta o riquadro | barretta | pillola compatta |
 | Ingombro predefinito | 266×45 o 92×92 DIP | 45 DIP di altezza | altezza della taskbar |
 
+Ogni volta che compare — all'avvio, riaprendola dalla tray o dall'hotkey, o passando alla
+modalità overlay — la barretta si mostra a piena opacità per un paio di secondi prima di
+sbiadire: con un'opacità a riposo molto bassa, altrimenti, si fa fatica a trovarla.
+
 <img src="docs/media/overlay-bar.png" width="318" alt="Overlay, aspetto barretta">
 
 In modalità taskbar la pillola mostra a riposo solo copertina, comandi e progress;

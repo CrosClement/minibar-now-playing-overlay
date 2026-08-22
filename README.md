@@ -83,7 +83,10 @@ repository and will appear once it is merged.
 | Looks available | bar or tile | bar | compact pill |
 | Default footprint | 266×45 or 92×92 DIP | 45 DIP tall | taskbar height |
 
-**Overlay**, the bar look — drag it anywhere, click-through and dimmed until you hover it:
+**Overlay**, the bar look — drag it anywhere, click-through and dimmed until you hover it.
+Whenever it appears — at startup, when you bring it back from the tray or the hotkey, or
+when you switch into overlay mode — it shows itself at full opacity for a couple of seconds
+before dimming, so you can find it even with the idle opacity turned way down:
 
 <img src="docs/media/overlay-bar.png" width="318" alt="Overlay, bar look">
 

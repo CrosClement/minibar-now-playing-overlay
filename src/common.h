@@ -64,6 +64,7 @@ enum : UINT_PTR {
     IDT_PLAYER  = 6,  // applicazione ritardata della policy sul player (one-shot)
     IDT_VOLUME  = 7,  // fine del lampeggio del volume (one-shot)
     IDT_MARQUEE = 8,  // scorrimento del titolo lungo, solo durante l'hover
+    IDT_REVEAL  = 9,  // fine del "eccomi" a opacità piena dopo avvio/riapertura (one-shot)
 };
 
 constexpr UINT kTrayIconId = 1;

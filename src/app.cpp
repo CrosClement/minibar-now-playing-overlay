@@ -16,6 +16,9 @@ constexpr UINT kVolumeFlashMs = 1400;
 // Durata della dissolvenza fra due copertine.
 constexpr ULONGLONG kArtFadeMs = 220;
 
+// Quanto resta ben visibile la barretta appena compare, prima di sbiadire.
+constexpr UINT kRevealMs = 2500;
+
 // Passo per tick delle transizioni: ~130 ms l'opacità, ~110 ms la pillola.
 constexpr float kOpacityStep = 0.12f;
 constexpr float kExpandStep  = 0.15f;
@@ -147,6 +150,7 @@ bool App::CreateBar() {
 
     SyncTimers();
     Redraw();
+    Reveal();  // all'avvio e a ogni cambio modalità verso overlay
     return true;
 }
 
@@ -160,7 +164,7 @@ void App::DestroyBar() {
         hotkeyRegistered_ = false;
     }
     for (UINT_PTR id : {IDT_CURSOR, IDT_TICK, IDT_TOPMOST, IDT_ANIM, IDT_UNHOVER, IDT_PLAYER,
-                        IDT_VOLUME, IDT_MARQUEE})
+                        IDT_VOLUME, IDT_MARQUEE, IDT_REVEAL})
         KillTimer(hwnd_, id);
     unhoverArmed_ = false;
     hovered_      = false;
@@ -434,6 +438,16 @@ void App::OnCursorTick() {
     }
 }
 
+void App::Reveal() {
+    // Solo in overlay: docked e taskbar sono già a opacità piena.
+    if (!hwnd_ || cfg_.mode != BarMode::Overlay || !barVisible_) return;
+
+    // Piena subito, non in dissolvenza: il punto è farsi trovare.
+    opacity_ = targetOpacity_ = 1.0f;
+    SetTimer(hwnd_, IDT_REVEAL, kRevealMs, nullptr);
+    Redraw();
+}
+
 void App::RefreshTheme() {
     // Due valori distinti: la taskbar decide il contrasto della pillola che ci
     // sta sopra, il tema delle applicazioni decide come la barretta disegna il
@@ -485,6 +499,7 @@ void App::ToggleBarVisible() {
         if (cfg_.mode != BarMode::Taskbar || taskbarOnScreen_) win::ShowNoActivate(hwnd_);
         SyncTimers();
         Redraw();
+        Reveal();  // riaperta dalla tray, dall'hotkey o dal menu: fatti trovare
     } else {
         ShowWindow(hwnd_, SW_HIDE);
         hovered_ = false;
@@ -759,6 +774,14 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
                     Redraw();  // scaduto il lampeggio, torna la progress bar
                     break;
                 case IDT_MARQUEE: Redraw(); break;
+                case IDT_REVEAL:
+                    KillTimer(hwnd_, IDT_REVEAL);
+                    // Se nel frattempo il mouse è arrivato sopra, comanda l'hover.
+                    if (!hovered_ && cfg_.mode == BarMode::Overlay) {
+                        targetOpacity_ = cfg_.idleOpacity / 255.0f;
+                        StartAnim();
+                    }
+                    break;
                 default: break;
             }
             return 0;

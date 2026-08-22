@@ -49,6 +49,12 @@ private:
 
     // Rilegge chiaro/scuro dal sistema (o dall'INI, se lo forza).
     void RefreshTheme();
+
+    // "Eccomi": in overlay la barretta si mostra a piena opacità per qualche
+    // istante, poi torna a sbiadire. Serve all'avvio e a ogni riapertura,
+    // perché con idle_opacity bassa una barretta appena comparsa è
+    // praticamente invisibile e non si trova.
+    void Reveal();
     void ShowMenu(POINT screenPt);
     void OnCommand(UINT id);
     void ToggleBarVisible();
