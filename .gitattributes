@@ -1,0 +1,7 @@
+# Fine riga normalizzati a LF nel repository; Git decide in checkout.
+* text=auto
+
+# Binari
+*.ico binary
+*.png binary
+*.gif binary
