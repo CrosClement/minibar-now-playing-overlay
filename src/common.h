@@ -49,7 +49,7 @@ enum : UINT_PTR {
     IDT_CURSOR  = 1,  // polling hover, 10 Hz
     IDT_TICK    = 2,  // avanzamento progress bar, 1 Hz
     IDT_TOPMOST = 3,  // fallback z-order, 7 s
-    IDT_FADE    = 4,  // transizione opacità
+    IDT_ANIM    = 4,  // transizioni brevi: opacità, copertina, pillola taskbar
     IDT_UNHOVER = 5,  // isteresi uscita hover (one-shot)
     IDT_PLAYER  = 6,  // applicazione ritardata della policy sul player (one-shot)
     IDT_VOLUME  = 7,  // fine del lampeggio del volume (one-shot)

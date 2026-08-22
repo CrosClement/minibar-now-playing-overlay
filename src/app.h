@@ -33,11 +33,18 @@ private:
     void SyncTimers();
 
     void OnCursorTick();
-    void OnFadeTick();
     void SetHovered(bool hovered);
+
+    // Transizioni brevi (opacità, copertina, pillola della taskbar): un solo
+    // timer, acceso solo mentre c'è qualcosa da muovere.
+    void StartAnim();
+    void OnAnimTick();
 
     // Accende o spegne lo scorrimento del titolo e lo fa ripartire da capo.
     void SyncMarquee();
+
+    // Cambia la copertina facendola comparire in dissolvenza su quella di prima.
+    void SwapThumbnail(const std::vector<uint8_t>& bytes);
     void ShowMenu(POINT screenPt);
     void OnCommand(UINT id);
     void ToggleBarVisible();
@@ -90,6 +97,12 @@ private:
     ULONGLONG marqueeStart_ = 0;
     float opacity_       = 1.0f;
     float targetOpacity_ = 1.0f;
+
+    // Apertura della pillola nella taskbar, 0-1, e dissolvenza della copertina.
+    float     expand_      = 0.f;
+    float     expandTarget_ = 0.f;
+    bool      artFading_   = false;
+    ULONGLONG artFadeStart_ = 0;
     int   pressedArea_   = 0;
     bool  dragging_      = false;
     POINT dragCursor_{};

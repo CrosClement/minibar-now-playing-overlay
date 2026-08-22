@@ -124,7 +124,7 @@ Geometry ComputeGeometry(const RenderState& st, float w, float h) {
                                      kTbPad + artSide + 1.f);
             g.progress = D2D1::RectF(kTbPad, h - kTbPad - kProgressH, w - kTbPad, h - kTbPad);
 
-            g.showText    = st.layout.expanded;
+            g.showText    = st.layout.expand > 0.02f;
             g.showButtons = true;
             break;
         }
@@ -195,7 +195,8 @@ struct Palette {
         scrim;
 };
 
-Palette PaletteFor(const RenderState& st, const ArtAccent& accent) {
+// `accent` è già il colore risolto per questo fondo (nullptr = nessuna tinta).
+Palette PaletteFor(const RenderState& st, const D2D1_COLOR_F* accent) {
     Palette p{};
     p.fill      = {0.114f, 0.725f, 0.329f, 1.0f};  // verde progress, se la copertina non tinge
     p.vol       = {0.95f, 0.95f, 0.98f, 0.95f};    // volume: chiaro, mai confondibile
@@ -226,7 +227,7 @@ Palette PaletteFor(const RenderState& st, const ArtAccent& accent) {
             p.artHole  = {1.0f, 1.0f, 1.0f, 0.12f};
         }
         // Dentro la taskbar il fondo è di Windows: si tinge solo la progress.
-        if (accent.valid) p.fill = AccentColor(accent, st.lightUi);
+        if (accent) p.fill = *accent;
         return p;
     }
 
@@ -241,8 +242,8 @@ Palette PaletteFor(const RenderState& st, const ArtAccent& accent) {
     p.glyphOff = {1.0f, 1.0f, 1.0f, 0.25f};
     p.artHole  = {1.0f, 1.0f, 1.0f, 0.10f};
 
-    if (accent.valid) {
-        const D2D1_COLOR_F tint = AccentColor(accent, false);
+    if (accent) {
+        const D2D1_COLOR_F tint = *accent;
         p.fill                  = tint;
         // Un soffio di colore nel fondo e nel bordo: si deve notare che la
         // barretta "sa" cosa sta suonando, non che è stata dipinta.
@@ -303,7 +304,7 @@ SIZE Renderer::Measure(const LayoutSpec& spec, UINT dpi) {
             h                 = Clamp(h, kTbMinH, kTbMaxH);
             const float art   = h - kTbPad * 2.f - kProgressH - 3.f;
             w                 = kTbPad + art + 10.f + kTbButton * 3.f + kTbPad;
-            if (spec.expanded) w += kTbTextW;
+            w += kTbTextW * Clamp(spec.expand, 0.f, 1.f);
             break;
         }
     }
@@ -407,6 +408,7 @@ void Renderer::ReleaseSurface() {
     brush_   = nullptr;
     layer_   = nullptr;
     art_     = nullptr;
+    artPrev_ = nullptr;
     rt_      = nullptr;
     surface_ = nullptr;
 
@@ -451,6 +453,10 @@ void Renderer::Resize(UINT widthPx, UINT heightPx, UINT dpi) {
 
 // ------------------------------------------------------------- copertina ---
 void Renderer::SetThumbnail(const std::vector<uint8_t>& bytes) {
+    // La copertina di prima non si butta: resta sotto mentre la nuova compare.
+    artPrev_    = art_;
+    accentPrev_ = accent_;
+
     artBytes_   = bytes;
     artSidePx_  = 0;
     art_        = nullptr;
@@ -601,22 +607,46 @@ ID2D1Layer* Renderer::Layer() {
     return layer_.get();
 }
 
-void Renderer::DrawArt(const D2D1_RECT_F& rect, float radius) {
-    const auto rr = D2D1::RoundedRect(rect, radius, radius);
-    if (!art_) {
+// La copertina nuova compare sopra quella vecchia, che resta piena finché non
+// è coperta: dissolvere entrambe a metà strada le farebbe schiarire tutte e due.
+void Renderer::DrawArt(const D2D1_RECT_F& rect, float radius, float fade) {
+    const auto  rr      = D2D1::RoundedRect(rect, radius, radius);
+    const float opacity = Clamp(fade, 0.f, 1.f);
+
+    if (!art_ && !artPrev_) {
         rt_->FillRoundedRectangle(rr, brush_.get());  // il chiamante ha già scelto il colore
         return;
     }
+
+    auto paint = [&] {
+        if (art_) {
+            // Sotto la nuova ci vuole qualcosa: la vecchia se c'è, il
+            // placeholder se questa è la prima copertina che arriva.
+            if (opacity < 1.f) {
+                if (artPrev_)
+                    rt_->DrawBitmap(artPrev_.get(), rect);
+                else
+                    rt_->FillRoundedRectangle(rr, brush_.get());
+            }
+            rt_->DrawBitmap(art_.get(), rect, opacity);
+        } else {
+            // Nessuna copertina nuova (player chiuso): quella di prima svanisce
+            // sul placeholder invece di sparire di colpo.
+            rt_->FillRoundedRectangle(rr, brush_.get());
+            if (artPrev_ && opacity < 1.f) rt_->DrawBitmap(artPrev_.get(), rect, 1.f - opacity);
+        }
+    };
+
     com_ptr<ID2D1RoundedRectangleGeometry> clip;
     if (SUCCEEDED(d2dFactory_->CreateRoundedRectangleGeometry(rr, clip.put()))) {
         if (ID2D1Layer* layer = Layer()) {
             rt_->PushLayer(D2D1::LayerParameters(rect, clip.get()), layer);
-            rt_->DrawBitmap(art_.get(), rect);
+            paint();
             rt_->PopLayer();
             return;
         }
     }
-    rt_->DrawBitmap(art_.get(), rect);
+    paint();
 }
 
 // ------------------------------------------------------------------ titolo --
@@ -681,8 +711,29 @@ void Renderer::Draw(const RenderState& st) {
         DecodeThumbnail();
     }
 
-    // Dopo il decode: è lì che si scopre la tinta della copertina.
-    const Palette pal = PaletteFor(st, accent_);
+    // Finita la dissolvenza, la copertina di prima non serve più.
+    const float artFade = Clamp(st.artFade, 0.f, 1.f);
+    if (artFade >= 1.f && (artPrev_ || accentPrev_.valid)) {
+        artPrev_    = nullptr;
+        accentPrev_ = ArtAccent{};
+    }
+
+    // Dopo il decode: è lì che si scopre la tinta della copertina. Anche il
+    // colore attraversa la dissolvenza, altrimenti la progress bar scatterebbe
+    // al colore nuovo mentre la copertina sta ancora sfumando.
+    const bool   onLight = (st.layout.kind == LayoutKind::Taskbar) && st.lightUi;
+    D2D1_COLOR_F tint{};
+    bool         tinted = false;
+    if (accent_.valid) {
+        tint   = AccentColor(accent_, onLight);
+        tinted = true;
+    }
+    if (accentPrev_.valid && artFade < 1.f) {
+        const D2D1_COLOR_F before = AccentColor(accentPrev_, onLight);
+        tint                      = tinted ? Mix(before, tint, artFade) : before;
+        tinted                    = true;
+    }
+    const Palette pal = PaletteFor(st, tinted ? &tint : nullptr);
 
     rt_->BeginDraw();
     rt_->Clear(D2D1::ColorF(0, 0.0f));
@@ -705,7 +756,7 @@ void Renderer::Draw(const RenderState& st) {
 
     // --- copertina ---
     brush_->SetColor(pal.artHole);
-    DrawArt(g.art, g.artCorner);
+    DrawArt(g.art, g.artCorner, artFade);
 
     // --- testo ---
     const TitleSlot title = TitleFor(st, w, h);

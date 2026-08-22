@@ -172,6 +172,17 @@ Le copertine senza un colore vero (bianco e nero, collage senza dominante) non t
 niente e resta il verde di sempre. Il calcolo costa 144 pixel una volta per traccia: a
 riposo non cambia nulla.
 
+### Le transizioni durano quanto serve, poi il timer sparisce
+
+Al cambio traccia la copertina nuova compare in dissolvenza sopra quella di prima, in
+220 ms, e insieme a lei si sposta la tinta della progress bar: se il colore scattasse
+mentre l'immagine sta ancora sfumando si noterebbe più della dissolvenza stessa. Nella
+taskbar la pillola si apre sul testo con una curva morbida invece di scattare.
+
+Tutte le transizioni — opacità all'hover, copertina, pillola — girano su un solo timer a
+16 ms, che si accende quando comincia qualcosa e si spegne appena tutto è fermo. Le misure
+a riposo prima e dopo questa aggiunta sono le stesse, ed è esattamente il punto.
+
 ### I titoli lunghi scorrono, ma solo sotto il mouse
 
 Un titolo che non ci sta viene troncato con l'ellissi, come in qualsiasi altra interfaccia.

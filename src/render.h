@@ -25,7 +25,7 @@ struct LayoutSpec {
     LayoutKind kind      = LayoutKind::Bar;
     float      widthDip  = 380.f;  // per Tile è il lato del quadrato
     float      heightDip = 64.f;   // per Taskbar la detta la taskbar
-    bool       expanded  = false;  // Taskbar: mostra anche il testo
+    float      expand    = 0.f;    // Taskbar: 0 pillola chiusa, 1 aperta sul testo
 };
 
 // Ciò che il renderer deve mostrare. Nessuna logica, solo dati.
@@ -49,6 +49,10 @@ struct RenderState {
     // Millisecondi da quando è cominciato lo scorrimento del titolo; < 0 = fermo.
     // Scorre solo in hover: a riposo non esiste nessun timer.
     double marqueeMs = -1.0;
+
+    // Avanzamento della dissolvenza fra la copertina vecchia e la nuova:
+    // 0 = ancora tutta vecchia, 1 = transizione finita.
+    float artFade = 1.f;
 };
 
 enum class HitArea { None = 0, Drag, Prev, PlayPause, Next, Progress };
@@ -101,7 +105,7 @@ private:
     void DecodeThumbnail();
     void ComputeAccent(IWICBitmapSource* source);
     void Present(float opacity);
-    void DrawArt(const D2D1_RECT_F& rect, float radius);
+    void DrawArt(const D2D1_RECT_F& rect, float radius, float fade);
 
     // Testo, riquadro e font del titolo, in DIP: li devono vedere uguali il
     // disegno e la misura dello sbordamento.
@@ -138,4 +142,9 @@ private:
     std::vector<uint8_t>        artBytes_;
     ArtAccent                   accent_;
     bool                        accentDone_ = false;  // calcolato una volta per copertina
+
+    // La copertina di prima resta in vita quel tanto che basta a sfumare sotto
+    // quella nuova, e con lei la tinta da cui il colore parte.
+    winrt::com_ptr<ID2D1Bitmap> artPrev_;
+    ArtAccent                   accentPrev_;
 };

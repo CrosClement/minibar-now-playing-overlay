@@ -13,6 +13,36 @@ namespace {
 // Quanto resta visibile il livello del volume sulla striscia della progress bar.
 constexpr UINT kVolumeFlashMs = 1400;
 
+// Durata della dissolvenza fra due copertine.
+constexpr ULONGLONG kArtFadeMs = 220;
+
+// Passo per tick delle transizioni: ~130 ms l'opacità, ~110 ms la pillola.
+constexpr float kOpacityStep = 0.12f;
+constexpr float kExpandStep  = 0.15f;
+
+// Partenza e arrivo morbidi: l'apertura della pillola non deve sembrare uno
+// scatto lineare.
+float SmoothStep(float t) {
+    if (t <= 0.f) return 0.f;
+    if (t >= 1.f) return 1.f;
+    return t * t * (3.f - 2.f * t);
+}
+
+// Avvicina `value` a `target` di un passo; vero se è arrivato.
+bool StepToward(float& value, float target, float step) {
+    const float diff = target - value;
+    if (diff > step) {
+        value += step;
+        return false;
+    }
+    if (diff < -step) {
+        value -= step;
+        return false;
+    }
+    value = target;
+    return true;
+}
+
 int ClampToVirtualScreen(int value, int size, int origin, int extent) {
     const int minV = origin - size + 40;  // sempre almeno una fetta visibile
     const int maxV = origin + extent - 40;
@@ -129,12 +159,14 @@ void App::DestroyBar() {
         UnregisterHotKey(hwnd_, kHotkeyId);
         hotkeyRegistered_ = false;
     }
-    for (UINT_PTR id : {IDT_CURSOR, IDT_TICK, IDT_TOPMOST, IDT_FADE, IDT_UNHOVER, IDT_PLAYER,
+    for (UINT_PTR id : {IDT_CURSOR, IDT_TICK, IDT_TOPMOST, IDT_ANIM, IDT_UNHOVER, IDT_PLAYER,
                         IDT_VOLUME, IDT_MARQUEE})
         KillTimer(hwnd_, id);
     unhoverArmed_ = false;
     hovered_      = false;
     marqueeOn_    = false;
+    artFading_    = false;
+    expand_ = expandTarget_ = 0.f;
 
     win::RemoveTrayIcon(hwnd_);
     renderer_.Shutdown();
@@ -255,7 +287,7 @@ LayoutSpec App::BuildLayout() const {
         case BarMode::Taskbar:
             spec.kind      = LayoutKind::Taskbar;
             spec.heightDip = taskbarHeightDip_;
-            spec.expanded  = hovered_;
+            spec.expand    = SmoothStep(expand_);
             break;
         default:
             spec.kind = (cfg_.overlayLayout == OverlayLayout::Tile) ? LayoutKind::Tile
@@ -295,6 +327,13 @@ RenderState App::BuildState() const {
     st.pressed   = pressedArea_;
     st.volume    = (GetTickCount64() < volumeShownUntil_) ? volumeLevel_ : -1.f;
     st.marqueeMs = marqueeOn_ ? static_cast<double>(GetTickCount64() - marqueeStart_) : -1.0;
+
+    st.artFade = 1.f;
+    if (artFading_) {
+        const ULONGLONG elapsed = GetTickCount64() - artFadeStart_;
+        if (elapsed < kArtFadeMs)
+            st.artFade = static_cast<float>(elapsed) / static_cast<float>(kArtFadeMs);
+    }
     return st;
 }
 
@@ -356,11 +395,12 @@ void App::SetHovered(bool hovered) {
             // stile si toglie solo quando serve davvero.
             win::SetClickThrough(hwnd_, !hovered);
             targetOpacity_ = hovered ? 1.0f : cfg_.idleOpacity / 255.0f;
-            SetTimer(hwnd_, IDT_FADE, 16, nullptr);
+            StartAnim();
             break;
 
         case BarMode::Taskbar:
-            PositionTaskbar();  // in hover la pillola si allarga per il testo
+            expandTarget_ = hovered ? 1.f : 0.f;  // la pillola si apre sul testo
+            StartAnim();
             break;
 
         default:
@@ -393,17 +433,35 @@ void App::OnCursorTick() {
     }
 }
 
-void App::OnFadeTick() {
-    constexpr float kStep = 0.12f;
-    const float     diff  = targetOpacity_ - opacity_;
-    if (diff > kStep)
-        opacity_ += kStep;
-    else if (diff < -kStep)
-        opacity_ -= kStep;
-    else {
-        opacity_ = targetOpacity_;
-        KillTimer(hwnd_, IDT_FADE);
+void App::SwapThumbnail(const std::vector<uint8_t>& bytes) {
+    renderer_.SetThumbnail(bytes);
+    artFading_    = true;
+    artFadeStart_ = GetTickCount64();
+    StartAnim();
+}
+
+void App::StartAnim() {
+    if (hwnd_) SetTimer(hwnd_, IDT_ANIM, 16, nullptr);
+}
+
+void App::OnAnimTick() {
+    bool busy = false;
+
+    if (opacity_ != targetOpacity_) busy |= !StepToward(opacity_, targetOpacity_, kOpacityStep);
+
+    if (expand_ != expandTarget_) {
+        busy |= !StepToward(expand_, expandTarget_, kExpandStep);
+        // La pillola cambia larghezza mentre si apre: va rimisurata e rimessa
+        // al suo posto a ogni passo.
+        if (cfg_.mode == BarMode::Taskbar) PositionTaskbar();
     }
+
+    if (artFading_ && GetTickCount64() - artFadeStart_ >= kArtFadeMs) artFading_ = false;
+    busy |= artFading_;
+
+    // Il timer esiste solo finché c'è qualcosa da muovere: finita la
+    // transizione si torna a dormire nel message loop.
+    if (!busy) KillTimer(hwnd_, IDT_ANIM);
     Redraw();
 }
 
@@ -549,7 +607,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
                 artist_.clear();
                 thumb_.clear();
                 thumbTitle_.clear();
-                renderer_.SetThumbnail({});
+                SwapThumbnail({});
                 SyncMarquee();
                 Redraw();
                 return 0;
@@ -569,14 +627,14 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
                 if (up->thumb != thumb_) {
                     thumb_      = std::move(up->thumb);
                     thumbTitle_ = title_;
-                    renderer_.SetThumbnail(thumb_);
+                    SwapThumbnail(thumb_);
                 }
             } else if (!thumb_.empty() && thumbTitle_ != title_) {
                 // Thumbnail ancora assente per la nuova traccia: placeholder,
                 // riproveremo al prossimo MediaPropertiesChanged.
                 thumb_.clear();
                 thumbTitle_.clear();
-                renderer_.SetThumbnail({});
+                SwapThumbnail({});
             }
             if (titleChanged) SyncMarquee();  // titolo nuovo: la corsa riparte da capo
             Redraw();
@@ -619,7 +677,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
             switch (wParam) {
                 case IDT_CURSOR: OnCursorTick(); break;
                 case IDT_TICK: Redraw(); break;
-                case IDT_FADE: OnFadeTick(); break;
+                case IDT_ANIM: OnAnimTick(); break;
                 case IDT_UNHOVER:
                     KillTimer(hwnd_, IDT_UNHOVER);
                     unhoverArmed_ = false;

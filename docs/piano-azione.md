@@ -61,7 +61,7 @@ software e con lo zero-redraw a riposo.
 |---|---|---|---|
 | 2.1 ✅ | Colore dominante dalla copertina | media/quantizzazione sui pixel della bitmap SMTC a ogni cambio traccia; tinta su progress bar e/o sfondo | il colore segue l'album, costo solo al cambio traccia |
 | 2.2 ✅ | Marquee dei titoli lunghi | scorrimento con dissolvenza ai bordi, **solo in hover** | a riposo zero ridisegni, come oggi |
-| 2.3 | Transizioni brevi | fade della copertina al cambio traccia, easing sull'espansione della pillola taskbar | timer attivo solo durante la transizione (poche centinaia di ms) |
+| 2.3 ✅ | Transizioni brevi | fade della copertina al cambio traccia, easing sull'espansione della pillola taskbar | timer attivo solo durante la transizione (poche centinaia di ms) |
 | 2.4 | Tema chiaro/scuro dal sistema | lettura di `AppsUseLightTheme` + notifica `WM_SETTINGCHANGE` | la barretta segue il tema senza riavvio |
 
 Criterio trasversale: dopo ogni voce, rimisurare RAM/CPU a riposo e confermare che i
@@ -92,6 +92,22 @@ senza scorrimento, 0,635 ms in hover mentre scorre — cioè ~1,9 % di un core m
 tiene il mouse sopra, e nulla appena lo si toglie.
 Misure dopo la voce (riquadro, musica in riproduzione, 60 s): private working set 5,46 MB,
 CPU a riposo 0,026 % di un core (0,0016 % della macchina).
+
+**2.3** — Un solo timer per tutte le transizioni brevi (`IDT_ANIM`, 16 ms), acceso quando
+comincia qualcosa e spento non appena opacità, copertina e pillola sono tutte ferme: fuori
+dalle transizioni non esiste. Al cambio traccia la copertina nuova compare sopra quella
+vecchia in 220 ms — sovrapposta, non dissolte entrambe a metà, che le farebbe schiarire
+tutte e due — e insieme a lei si sposta la tinta della progress bar, altrimenti il colore
+scatterebbe mentre l'immagine sta ancora sfumando. Se non c'è una copertina nuova (player
+chiuso) la vecchia svanisce sul placeholder. La pillola della taskbar si apre con una
+curva smoothstep: `LayoutSpec::expanded` è diventato `expand` 0-1, e la larghezza del
+testo entra proporzionalmente nella misura.
+Verificato fotogramma per fotogramma: rosso → blu attraversa il rosa e il viola sia nella
+copertina sia nella progress; la pillola passa da 125 a 315 px con le larghezze intermedie
+giuste e il titolo che si scopre man mano.
+Misure dopo la voce (barra, musica in riproduzione, 60 s): private working set 6,29 MB,
+CPU a riposo 0,23 % di un core (0,015 % della macchina) — cioè come prima della voce, che
+è il punto: a transizione finita il timer non c'è più.
 
 ## Fase 3 — Presentazione
 
