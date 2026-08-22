@@ -78,7 +78,7 @@ rispetta, e la CI fallisce se l'eseguibile sfora.
 | RAM (private working set a regime) | < 15 MB | ~7 MB (barretta), ~5,5 (riquadro) | Task Manager, "Working set (privato)", dopo minuti di riproduzione |
 | CPU a riposo | ≈ 0,0 % | 0,0 % (centesimi di core) | Task Manager, media su 60 s senza hover |
 | GPU fra un ridisegno e l'altro | 0 % | 0 % — non esiste un device GPU | Task Manager scheda GPU / PresentMon |
-| Dimensione eseguibile | ≤ 2 MB | 300 KB | build Release, controllato dalla CI |
+| Dimensione eseguibile | ≤ 2 MB | 303 KB (asset della release) | build Release della CI, controllata dal workflow |
 | Avvio (processo → barretta visibile) | < 200 ms | ~57 ms (mediana di 5 a caldo) | timestamp |
 | Impatto sul frametime di un gioco | non misurabile | — | PresentMon con e senza overlay |
 

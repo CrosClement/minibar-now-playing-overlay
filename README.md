@@ -24,7 +24,7 @@ changes and sleeps in the message loop the rest of the time.
 | | Measured |
 |---|---|
 | RAM (private working set) | **~7 MB** in the bar look, ~5.5 MB in the tile |
-| Executable | **300 KB**, no runtime to install |
+| Executable | **303 KB** (the release asset, built by the CI), no runtime to install |
 | CPU at rest | **0.03 %** of one core between events — **0.0 %** in Task Manager |
 | GPU between redraws | **0 %** — there is no GPU device at all |
 | Start to visible bar | **~57 ms** |

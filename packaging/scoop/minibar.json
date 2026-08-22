@@ -1,6 +1,6 @@
 {
     "version": "1.1.0",
-    "description": "The lightest music overlay for Windows 11: shows what is playing and controls it, in about 6 MB of RAM, with no hooks and no injected DLLs.",
+    "description": "The lightest music overlay for Windows 11: shows what is playing and controls it, in about 7 MB of RAM and a ~300 KB executable, with no hooks and no injected DLLs.",
     "homepage": "https://github.com/AceisX/minibar-now-playing-overlay",
     "license": "MIT",
     "architecture": {
