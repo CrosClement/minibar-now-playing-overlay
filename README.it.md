@@ -291,7 +291,7 @@ centrata può finirci sopra: in quel caso si usa `anchor=right` nell'INI.
 |---|---|---|
 | Private working set | < 15 MB | ~6 MB (5,5–6,5 secondo il layout) |
 | CPU a riposo | ≈ 0,0 % | centesimi di core: 0,0 % nel Task Manager |
-| Dimensione eseguibile | ≤ 2 MB | 260,5 KB |
+| Dimensione eseguibile | ≤ 2 MB | 295 KB |
 | Avvio → barretta visibile | < 200 ms | ~50 ms (~110 ms al primo avvio a freddo) |
 | GPU fra i ridisegni | 0 % | 0 % (nessun device GPU) |
 

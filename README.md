@@ -4,7 +4,7 @@
 
 *[Leggi in italiano](README.it.md)*
 
-**The lightest music overlay for Windows 11.** ~6 MB of RAM, a 260 KB executable, no GPU
+**The lightest music overlay for Windows 11.** ~6 MB of RAM, a sub-300 KB executable, no GPU
 work between redraws, and not a single hook or injected DLL — so it is safe to run next to
 an anti-cheat.
 
@@ -24,7 +24,7 @@ changes and sleeps in the message loop the rest of the time.
 | | Measured |
 |---|---|
 | RAM (private working set) | **~6 MB** |
-| Executable | **260 KB**, no runtime to install |
+| Executable | **295 KB**, no runtime to install |
 | CPU at rest | **0.0 %** in Task Manager (hundredths of a core) |
 | GPU between redraws | **0 %** — there is no GPU device at all |
 | Cold start to visible bar | **~50 ms** (~110 ms the very first run, before the file cache is warm) |
