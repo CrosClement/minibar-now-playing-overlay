@@ -129,11 +129,12 @@ void App::DestroyBar() {
         UnregisterHotKey(hwnd_, kHotkeyId);
         hotkeyRegistered_ = false;
     }
-    for (UINT_PTR id :
-         {IDT_CURSOR, IDT_TICK, IDT_TOPMOST, IDT_FADE, IDT_UNHOVER, IDT_PLAYER, IDT_VOLUME})
+    for (UINT_PTR id : {IDT_CURSOR, IDT_TICK, IDT_TOPMOST, IDT_FADE, IDT_UNHOVER, IDT_PLAYER,
+                        IDT_VOLUME, IDT_MARQUEE})
         KillTimer(hwnd_, id);
     unhoverArmed_ = false;
     hovered_      = false;
+    marqueeOn_    = false;
 
     win::RemoveTrayIcon(hwnd_);
     renderer_.Shutdown();
@@ -293,7 +294,28 @@ RenderState App::BuildState() const {
     st.opacity   = opacity_;
     st.pressed   = pressedArea_;
     st.volume    = (GetTickCount64() < volumeShownUntil_) ? volumeLevel_ : -1.f;
+    st.marqueeMs = marqueeOn_ ? static_cast<double>(GetTickCount64() - marqueeStart_) : -1.0;
     return st;
+}
+
+void App::SyncMarquee() {
+    if (!hwnd_) return;
+
+    // Il titolo scorre solo se sborda davvero e solo mentre il mouse è sopra:
+    // fuori dall'hover il timer non esiste, quindi a riposo non si ridisegna
+    // niente. Ogni chiamata fa ripartire la corsa da capo — è quello che serve
+    // sia entrando in hover sia al cambio traccia.
+    const bool want = hovered_ && barVisible_ && renderer_.Valid() &&
+                      renderer_.TitleOverflow(BuildState()) > 0.f;
+
+    if (want) {
+        marqueeOn_    = true;
+        marqueeStart_ = GetTickCount64();
+        SetTimer(hwnd_, IDT_MARQUEE, 33, nullptr);
+    } else if (marqueeOn_) {
+        marqueeOn_ = false;
+        KillTimer(hwnd_, IDT_MARQUEE);
+    }
 }
 
 void App::Redraw() {
@@ -345,6 +367,7 @@ void App::SetHovered(bool hovered) {
             break;
     }
     if (!hovered) pressedArea_ = 0;
+    SyncMarquee();
     Redraw();
 }
 
@@ -394,6 +417,7 @@ void App::ToggleBarVisible() {
         ShowWindow(hwnd_, SW_HIDE);
         hovered_ = false;
         SyncTimers();
+        SyncMarquee();
     }
 }
 
@@ -526,10 +550,16 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
                 thumb_.clear();
                 thumbTitle_.clear();
                 renderer_.SetThumbnail({});
+                SyncMarquee();
                 Redraw();
                 return 0;
             }
             if (!smtc_.AcceptGeneration(static_cast<uint32_t>(wParam))) return 0;
+
+            // SMTC rimanda gli stessi metadati più volte per la stessa traccia
+            // (la copertina arriva dopo): la corsa del titolo riparte solo se
+            // il titolo è davvero un altro, altrimenti in hover salterebbe.
+            const bool titleChanged = (title_ != up->title);
 
             title_    = up->title;
             artist_   = up->artist;
@@ -548,6 +578,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
                 thumbTitle_.clear();
                 renderer_.SetThumbnail({});
             }
+            if (titleChanged) SyncMarquee();  // titolo nuovo: la corsa riparte da capo
             Redraw();
             return 0;
         }
@@ -606,6 +637,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
                     KillTimer(hwnd_, IDT_VOLUME);
                     Redraw();  // scaduto il lampeggio, torna la progress bar
                     break;
+                case IDT_MARQUEE: Redraw(); break;
                 default: break;
             }
             return 0;
@@ -737,6 +769,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_SIZE:
             if (renderer_.Valid()) {
                 renderer_.Resize(LOWORD(lParam), HIWORD(lParam), dpi_);
+                SyncMarquee();  // meno spazio per il testo può voler dire scorrerlo
                 Redraw();
             }
             return 0;
@@ -757,6 +790,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
             RECT rc{};
             GetClientRect(hwnd_, &rc);
             renderer_.Resize(rc.right - rc.left, rc.bottom - rc.top, dpi_);
+            SyncMarquee();
             Redraw();
             return 0;
         }

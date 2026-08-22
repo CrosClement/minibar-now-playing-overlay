@@ -172,6 +172,22 @@ Le copertine senza un colore vero (bianco e nero, collage senza dominante) non t
 niente e resta il verde di sempre. Il calcolo costa 144 pixel una volta per traccia: a
 riposo non cambia nulla.
 
+### I titoli lunghi scorrono, ma solo sotto il mouse
+
+Un titolo che non ci sta viene troncato con l'ellissi, come in qualsiasi altra interfaccia.
+Passandoci sopra col mouse comincia a scorrere — andata, pausa, ritorno — e ai bordi sfuma
+invece di essere tagliato di netto. La sfumatura c'è solo dal lato in cui il testo continua
+davvero: arrivato in fondo, il bordo destro torna netto.
+
+Il timer che lo anima nasce quando il mouse entra e muore quando esce, e non viene nemmeno
+creato se il titolo ci sta tutto: il principio "zero lavoro se non cambia niente" resta
+intatto. Un disegno con lo scorrimento costa 0,64 ms contro 0,39 ms fermo, cioè meno del
+2 % di un core mentre si tiene il mouse sopra la barretta.
+
+La sfumatura è una maschera di opacità (un gradiente su un layer Direct2D), non un
+rettangolo del colore dello sfondo: su una finestra semitrasparente quest'ultimo si
+vedrebbe come una toppa opaca.
+
 ### Rendering: software invece di DirectComposition
 
 Il piano (§6.3) indica come strada raccomandata una swapchain di composizione DXGI +

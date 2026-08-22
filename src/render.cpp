@@ -256,6 +256,30 @@ bool Inside(const D2D1_RECT_F& r, float x, float y) {
     return x >= r.left && x < r.right && y >= r.top && y < r.bottom;
 }
 
+// ---------------------------------------------------------------- marquee ---
+constexpr float kMarqueeSpeed = 34.f;   // DIP al secondo
+constexpr float kMarqueeFade  = 12.f;   // larghezza della dissolvenza ai bordi
+constexpr float kMarqueeWait  = 900.f;  // fermo prima di partire
+constexpr float kMarqueeRest  = 1100.f; // fermo a fine corsa, prima di tornare
+
+// Di quanto è spostato il titolo a sinistra, dato il tempo trascorso. Andata,
+// pausa, ritorno: un ciclo che non fa mai saltare il testo.
+float MarqueeOffset(double ms, float overflow) {
+    if (overflow <= 0.f || ms < 0.0) return 0.f;
+
+    const double run   = static_cast<double>(overflow) / kMarqueeSpeed * 1000.0;
+    const double cycle = kMarqueeWait + run + kMarqueeRest + run;
+    double       t     = std::fmod(ms, cycle);
+
+    if (t < kMarqueeWait) return 0.f;
+    t -= kMarqueeWait;
+    if (t < run) return Clamp(static_cast<float>(t / 1000.0 * kMarqueeSpeed), 0.f, overflow);
+    t -= run;
+    if (t < kMarqueeRest) return overflow;
+    t -= kMarqueeRest;
+    return Clamp(overflow - static_cast<float>(t / 1000.0 * kMarqueeSpeed), 0.f, overflow);
+}
+
 }  // namespace
 
 // ------------------------------------------------------------------ misura --
@@ -381,6 +405,7 @@ bool Renderer::CreateSurface() {
 
 void Renderer::ReleaseSurface() {
     brush_   = nullptr;
+    layer_   = nullptr;
     art_     = nullptr;
     rt_      = nullptr;
     surface_ = nullptr;
@@ -571,6 +596,11 @@ void Renderer::DecodeThumbnail() {
     rt_->CreateBitmapFromWicBitmap(converter.get(), nullptr, art_.put());
 }
 
+ID2D1Layer* Renderer::Layer() {
+    if (!layer_ && rt_) rt_->CreateLayer(nullptr, layer_.put());
+    return layer_.get();
+}
+
 void Renderer::DrawArt(const D2D1_RECT_F& rect, float radius) {
     const auto rr = D2D1::RoundedRect(rect, radius, radius);
     if (!art_) {
@@ -579,15 +609,58 @@ void Renderer::DrawArt(const D2D1_RECT_F& rect, float radius) {
     }
     com_ptr<ID2D1RoundedRectangleGeometry> clip;
     if (SUCCEEDED(d2dFactory_->CreateRoundedRectangleGeometry(rr, clip.put()))) {
-        com_ptr<ID2D1Layer> layer;
-        if (SUCCEEDED(rt_->CreateLayer(nullptr, layer.put()))) {
-            rt_->PushLayer(D2D1::LayerParameters(rect, clip.get()), layer.get());
+        if (ID2D1Layer* layer = Layer()) {
+            rt_->PushLayer(D2D1::LayerParameters(rect, clip.get()), layer);
             rt_->DrawBitmap(art_.get(), rect);
             rt_->PopLayer();
             return;
         }
     }
     rt_->DrawBitmap(art_.get(), rect);
+}
+
+// ------------------------------------------------------------------ titolo --
+Renderer::TitleSlot Renderer::TitleFor(const RenderState& st, float w, float h) const {
+    TitleSlot slot;
+
+    const Geometry g = ComputeGeometry(st, w, h);
+    if (!g.showText || g.text.right <= g.text.left + 16.f) return slot;
+
+    // NB: 'small' è una macro del Windows SDK (rpcndr.h), non usarla come nome.
+    const bool compact = st.layout.kind == LayoutKind::Taskbar;
+    slot.format        = compact ? fmtTitleSm_.get() : fmtTitle_.get();
+    slot.text          = st.hasTrack ? st.title : std::wstring(L"Nessuna riproduzione");
+
+    const bool  twoLines = st.hasTrack && !st.artist.empty();
+    const float mid      = (g.text.top + g.text.bottom) * 0.5f;
+    slot.rect  = twoLines ? D2D1::RectF(g.text.left, g.text.top, g.text.right, mid) : g.text;
+    slot.shown = true;
+    return slot;
+}
+
+float Renderer::MeasureText(const std::wstring& text, IDWriteTextFormat* format) const {
+    if (!dwrite_ || !format || text.empty()) return 0.f;
+
+    com_ptr<IDWriteTextLayout> layout;
+    if (FAILED(dwrite_->CreateTextLayout(text.c_str(), static_cast<UINT32>(text.size()), format,
+                                         100000.f, 1000.f, layout.put())))
+        return 0.f;
+
+    DWRITE_TEXT_METRICS m{};
+    if (FAILED(layout->GetMetrics(&m))) return 0.f;
+    return m.widthIncludingTrailingWhitespace;
+}
+
+float Renderer::TitleOverflow(const RenderState& st) const {
+    if (!rt_) return 0.f;
+
+    const float     scale = 96.f / static_cast<float>(dpi_);
+    const TitleSlot slot  = TitleFor(st, widthPx_ * scale, heightPx_ * scale);
+    if (!slot.shown || slot.text.empty()) return 0.f;
+
+    const float avail = slot.rect.right - slot.rect.left;
+    const float wide  = MeasureText(slot.text, slot.format);
+    return (wide > avail + 1.f) ? wide - avail : 0.f;
 }
 
 // ----------------------------------------------------------------- disegno --
@@ -635,29 +708,75 @@ void Renderer::Draw(const RenderState& st) {
     DrawArt(g.art, g.artCorner);
 
     // --- testo ---
-    if (g.showText) {
-        // NB: 'small' è una macro del Windows SDK (rpcndr.h), non usarla come nome.
-        const bool         compact = st.layout.kind == LayoutKind::Taskbar;
-        IDWriteTextFormat* ft      = compact ? fmtTitleSm_.get() : fmtTitle_.get();
-        IDWriteTextFormat* fa      = compact ? fmtArtistSm_.get() : fmtArtist_.get();
+    const TitleSlot title = TitleFor(st, w, h);
+    if (title.shown) {
+        const UINT32 len   = static_cast<UINT32>(title.text.size());
+        const float  avail = title.rect.right - title.rect.left;
 
-        const float mid = (g.text.top + g.text.bottom) * 0.5f;
-        const std::wstring& title =
-            st.hasTrack ? st.title : std::wstring(L"Nessuna riproduzione");
-        const bool twoLines = st.hasTrack && !st.artist.empty();
+        // La larghezza vera del titolo si misura solo quando può servire, cioè
+        // in hover: a riposo il titolo lungo resta troncato con l'ellissi.
+        const float wide = (st.marqueeMs >= 0.0) ? MeasureText(title.text, title.format) : 0.f;
+        const float over = (wide > avail + 1.f) ? wide - avail : 0.f;
 
-        if (g.text.right > g.text.left + 16.f) {
-            brush_->SetColor(pal.title);
-            const auto tr = twoLines ? D2D1::RectF(g.text.left, g.text.top, g.text.right, mid)
-                                     : g.text;
-            rt_->DrawTextW(title.c_str(), static_cast<UINT32>(title.size()), ft, tr, brush_.get(),
-                           D2D1_DRAW_TEXT_OPTIONS_CLIP);
-            if (twoLines) {
-                brush_->SetColor(pal.artist);
-                const auto ar = D2D1::RectF(g.text.left, mid, g.text.right, g.text.bottom);
-                rt_->DrawTextW(st.artist.c_str(), static_cast<UINT32>(st.artist.size()), fa, ar,
-                               brush_.get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        brush_->SetColor(pal.title);
+        if (over > 0.f) {
+            const float offset = MarqueeOffset(st.marqueeMs, over);
+            const auto  wideRect =
+                D2D1::RectF(title.rect.left - offset, title.rect.top,
+                            title.rect.left - offset + wide + 2.f, title.rect.bottom);
+
+            // Maschera di opacità: il testo sfuma ai bordi invece di essere
+            // tagliato di netto, e sfuma solo dal lato in cui continua davvero.
+            com_ptr<ID2D1LinearGradientBrush> mask;
+            if (avail > kMarqueeFade * 3.f) {
+                const float f     = kMarqueeFade / avail;
+                const float left  = Clamp(offset / kMarqueeFade, 0.f, 1.f);
+                const float right = Clamp((over - offset) / kMarqueeFade, 0.f, 1.f);
+
+                const D2D1_GRADIENT_STOP stops[] = {
+                    {0.0f, D2D1::ColorF(D2D1::ColorF::White, 1.f - left)},
+                    {f, D2D1::ColorF(D2D1::ColorF::White, 1.f)},
+                    {1.f - f, D2D1::ColorF(D2D1::ColorF::White, 1.f)},
+                    {1.0f, D2D1::ColorF(D2D1::ColorF::White, 1.f - right)},
+                };
+                com_ptr<ID2D1GradientStopCollection> ramp;
+                if (SUCCEEDED(rt_->CreateGradientStopCollection(stops, 4, ramp.put()))) {
+                    const float midY = (title.rect.top + title.rect.bottom) * 0.5f;
+                    rt_->CreateLinearGradientBrush(
+                        D2D1::LinearGradientBrushProperties(
+                            D2D1::Point2F(title.rect.left, midY),
+                            D2D1::Point2F(title.rect.right, midY)),
+                        ramp.get(), mask.put());
+                }
             }
+
+            ID2D1Layer* layer = mask ? Layer() : nullptr;
+            if (layer) {
+                rt_->PushLayer(D2D1::LayerParameters(title.rect, nullptr,
+                                                     D2D1_ANTIALIAS_MODE_PER_PRIMITIVE,
+                                                     D2D1::IdentityMatrix(), 1.0f, mask.get(),
+                                                     D2D1_LAYER_OPTIONS_NONE),
+                               layer);
+                rt_->DrawTextW(title.text.c_str(), len, title.format, wideRect, brush_.get());
+                rt_->PopLayer();
+            } else {
+                rt_->PushAxisAlignedClip(title.rect, D2D1_ANTIALIAS_MODE_ALIASED);
+                rt_->DrawTextW(title.text.c_str(), len, title.format, wideRect, brush_.get());
+                rt_->PopAxisAlignedClip();
+            }
+        } else {
+            rt_->DrawTextW(title.text.c_str(), len, title.format, title.rect, brush_.get(),
+                           D2D1_DRAW_TEXT_OPTIONS_CLIP);
+        }
+
+        if (st.hasTrack && !st.artist.empty()) {
+            IDWriteTextFormat* fa =
+                (st.layout.kind == LayoutKind::Taskbar) ? fmtArtistSm_.get() : fmtArtist_.get();
+            brush_->SetColor(pal.artist);
+            const auto ar =
+                D2D1::RectF(g.text.left, title.rect.bottom, g.text.right, g.text.bottom);
+            rt_->DrawTextW(st.artist.c_str(), static_cast<UINT32>(st.artist.size()), fa, ar,
+                           brush_.get(), D2D1_DRAW_TEXT_OPTIONS_CLIP);
         }
     }
 

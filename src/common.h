@@ -53,6 +53,7 @@ enum : UINT_PTR {
     IDT_UNHOVER = 5,  // isteresi uscita hover (one-shot)
     IDT_PLAYER  = 6,  // applicazione ritardata della policy sul player (one-shot)
     IDT_VOLUME  = 7,  // fine del lampeggio del volume (one-shot)
+    IDT_MARQUEE = 8,  // scorrimento del titolo lungo, solo durante l'hover
 };
 
 constexpr UINT kTrayIconId = 1;

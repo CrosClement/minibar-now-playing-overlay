@@ -35,6 +35,9 @@ private:
     void OnCursorTick();
     void OnFadeTick();
     void SetHovered(bool hovered);
+
+    // Accende o spegne lo scorrimento del titolo e lo fa ripartire da capo.
+    void SyncMarquee();
     void ShowMenu(POINT screenPt);
     void OnCommand(UINT id);
     void ToggleBarVisible();
@@ -81,8 +84,10 @@ private:
     ULONGLONG            baseTick_  = 0;  // GetTickCount64 corrispondente a posSec_
 
     // Interazione.
-    bool  hovered_       = false;
-    bool  unhoverArmed_  = false;
+    bool      hovered_      = false;
+    bool      unhoverArmed_ = false;
+    bool      marqueeOn_    = false;
+    ULONGLONG marqueeStart_ = 0;
     float opacity_       = 1.0f;
     float targetOpacity_ = 1.0f;
     int   pressedArea_   = 0;

@@ -60,7 +60,7 @@ software e con lo zero-redraw a riposo.
 | # | Attività | Note | Fatto quando |
 |---|---|---|---|
 | 2.1 ✅ | Colore dominante dalla copertina | media/quantizzazione sui pixel della bitmap SMTC a ogni cambio traccia; tinta su progress bar e/o sfondo | il colore segue l'album, costo solo al cambio traccia |
-| 2.2 | Marquee dei titoli lunghi | scorrimento con dissolvenza ai bordi, **solo in hover** | a riposo zero ridisegni, come oggi |
+| 2.2 ✅ | Marquee dei titoli lunghi | scorrimento con dissolvenza ai bordi, **solo in hover** | a riposo zero ridisegni, come oggi |
 | 2.3 | Transizioni brevi | fade della copertina al cambio traccia, easing sull'espansione della pillola taskbar | timer attivo solo durante la transizione (poche centinaia di ms) |
 | 2.4 | Tema chiaro/scuro dal sistema | lettura di `AppsUseLightTheme` + notifica `WM_SETTINGCHANGE` | la barretta segue il tema senza riavvio |
 
@@ -78,6 +78,20 @@ Verificato su copertine note — rosso pieno → rosso, blu → blu, teal con ba
 teal, scala di grigi → nessuna tinta, e sul campo con la copertina vera in riproduzione.
 Misure dopo la voce: private working set 5,98 MB, CPU a riposo 0,29 % di un core con la
 musica in riproduzione (0,018 % della macchina, cioè 0,0 % nel Task Manager).
+
+**2.2** — Il titolo scorre solo se sborda davvero e solo mentre il mouse è sopra: il timer
+a 30 Hz nasce con l'hover e muore con lui, quindi a riposo non cambia niente (a riposo il
+titolo lungo resta troncato con l'ellissi, come prima). La corsa è andata, pausa, ritorno,
+senza salti, e riparte da capo al cambio traccia o se cambia lo spazio disponibile. Ai
+bordi il testo sfuma invece di essere tagliato, e sfuma solo dal lato in cui continua
+davvero: a fine corsa il bordo destro è netto. La dissolvenza è una maschera di opacità
+(gradiente lineare su un layer D2D), non un rettangolo del colore di fondo, che su una
+finestra semitrasparente si vedrebbe.
+Costo misurato per disegno, barretta 266×45 a 96 DPI: 0,367 ms a riposo, 0,392 ms in hover
+senza scorrimento, 0,635 ms in hover mentre scorre — cioè ~1,9 % di un core mentre si
+tiene il mouse sopra, e nulla appena lo si toglie.
+Misure dopo la voce (riquadro, musica in riproduzione, 60 s): private working set 5,46 MB,
+CPU a riposo 0,026 % di un core (0,0016 % della macchina).
 
 ## Fase 3 — Presentazione
 

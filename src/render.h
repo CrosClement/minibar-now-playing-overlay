@@ -45,6 +45,10 @@ struct RenderState {
     float        opacity   = 1.0f;
     int          pressed   = 0;     // HitArea premuta, per il feedback visivo
     float        volume    = -1.f;  // 0-1 mentre lampeggia il volume, <0 = non mostrarlo
+
+    // Millisecondi da quando è cominciato lo scorrimento del titolo; < 0 = fermo.
+    // Scorre solo in hover: a riposo non esiste nessun timer.
+    double marqueeMs = -1.0;
 };
 
 enum class HitArea { None = 0, Drag, Prev, PlayPause, Next, Progress };
@@ -73,6 +77,10 @@ public:
     // clientPx in pixel client; frac riceve la posizione 0-1 sulla progress bar.
     HitArea HitTest(POINT clientPx, const RenderState& state, float* frac = nullptr) const;
 
+    // Quanto sborda il titolo dallo spazio che ha, in DIP: 0 se ci sta tutto.
+    // È l'unica cosa che App deve sapere per decidere se far scorrere il testo.
+    float TitleOverflow(const RenderState& state) const;
+
     // Dimensione in pixel richiesta da un layout a un certo DPI.
     static SIZE Measure(const LayoutSpec& spec, UINT dpi);
 
@@ -81,12 +89,25 @@ public:
     const ArtAccent& Accent() const { return accent_; }
 
 private:
+    struct TitleSlot {
+        std::wstring       text;
+        D2D1_RECT_F        rect{};
+        IDWriteTextFormat* format = nullptr;
+        bool               shown  = false;
+    };
+
     bool CreateSurface();
     void ReleaseSurface();
     void DecodeThumbnail();
     void ComputeAccent(IWICBitmapSource* source);
     void Present(float opacity);
     void DrawArt(const D2D1_RECT_F& rect, float radius);
+
+    // Testo, riquadro e font del titolo, in DIP: li devono vedere uguali il
+    // disegno e la misura dello sbordamento.
+    TitleSlot   TitleFor(const RenderState& state, float w, float h) const;
+    float       MeasureText(const std::wstring& text, IDWriteTextFormat* format) const;
+    ID2D1Layer* Layer();  // layer riusabile: ritagli e maschere di opacità
 
     HWND hwnd_    = nullptr;
     UINT dpi_     = 96;
@@ -100,6 +121,7 @@ private:
     winrt::com_ptr<IWICBitmap>           surface_;
     winrt::com_ptr<ID2D1RenderTarget>    rt_;
     winrt::com_ptr<ID2D1SolidColorBrush> brush_;
+    winrt::com_ptr<ID2D1Layer>           layer_;
 
     // Destinazione GDI per UpdateLayeredWindow.
     HDC     memDC_   = nullptr;
