@@ -149,21 +149,59 @@ vanno rifatti.
 
 | # | Attività | Fatto quando |
 |---|---|---|
-| 3.1 | README in inglese come principale; l'attuale diventa `README.it.md` | un anglofono capisce cos'è e come installarlo senza tradurre |
-| 3.2 | GIF animata in testa al README (hover → controlli → cambio traccia → volume) | GIF < 5 MB, visibile su GitHub senza click |
+| 3.1 ✅ | README in inglese come principale; l'attuale diventa `README.it.md` | un anglofono capisce cos'è e come installarlo senza tradurre |
+| 3.2 ✅ | GIF animata in testa al README (hover → controlli → cambio traccia → volume) | GIF < 5 MB, visibile su GitHub senza click |
 | 3.3 | Tabella comparativa RAM/CPU/GPU vs alternative note | numeri misurati, metodologia dichiarata |
-| 3.4 | Licenza MIT, topics, descrizione, social preview | pagina repo completa |
-| 3.5 | Screenshot delle tre modalità (overlay, docked, taskbar) e dei due layout | cartella `docs/media/` |
+| 3.4 ✅ | Licenza MIT, topics, descrizione, social preview | pagina repo completa |
+| 3.5 ✅ | Screenshot delle tre modalità (overlay, docked, taskbar) e dei due layout | cartella `docs/media/` |
+
+Deciso qui: l'**interfaccia passa all'inglese** (quindici stringhe fra `window.cpp` e
+`render.cpp`), perché un repo con README inglese e menu italiano confonde; il README
+italiano resta completo come `README.it.md`, con le voci di menu citate nella forma vera e
+la traduzione fra parentesi. Licenza MIT a nome di *MiniBar contributors*.
+
+**3.5** — Sette PNG a 192 DPI in `docs/media/`, 60 KB in tutto, mostrati nel README a
+larghezza dimezzata. Generati dalla stessa `Renderer` dell'app, disegnata in una finestra
+di prova sopra uno sfondo costruito apposta: niente desktop di nessuno nelle immagini, e
+sono riproducibili con un comando. La copertina è sintetica, non una vera: un artwork vero
+in un repo pubblico è materiale protetto, e direbbe anche cosa ascolta chi ha fatto gli
+screenshot.
+
+**3.2** — GIF di 9,4 s in loop, 628×186 a densità doppia, 25 fps, **180 KB** contro un
+tetto di 5 MB. Il tempo è finto: ogni fotogramma è un istante calcolato, non catturato in
+tempo reale, quindi la riproduzione ha la velocità esatta e non risente di quanto ci mette
+la macchina a disegnare e a salvare. Anche il cursore è disegnato dentro il fotogramma.
+Encoding con `palettegen`/`paletteuse` (dither di Bayer, che a differenza dell'error
+diffusion non "formica" fra un fotogramma e l'altro e comprime meglio), ffmpeg portable in
+`tools\ffmpeg\`.
+
+**Misure aggiornate** rispetto a quelle scritte nel README della 1.0: eseguibile 260,5 KB
+(era 226), avvio processo → barretta visibile ~50 ms (era 82; ~110 ms al primo avvio a
+freddo), RAM ~6 MB.
 
 ## Fase 4 — Distribuzione
 
 | # | Attività | Note | Fatto quando |
 |---|---|---|---|
-| 4.1 | GitHub Actions: build a ogni push | preset CMake per MSVC dei runner `windows-latest`, senza toolchain portable | badge verde sul README |
-| 4.2 | Release v1.0 con exe allegato | l'exe è già autosufficiente | `gh release` pubblicata, exe scaricabile |
+| 4.1 ✅ | GitHub Actions: build a ogni push | preset CMake per MSVC dei runner `windows-latest`, senza toolchain portable | badge verde sul README |
+| 4.2 ✅ | Release v1.0 con exe allegato | l'exe è già autosufficiente | `gh release` pubblicata, exe scaricabile |
 | 4.3 | Manifest winget | PR su `microsoft/winget-pkgs`, richiede release stabile con URL versionato | `winget install minibar` funziona |
 | 4.4 | Manifest Scoop | bucket personale o PR su `extras` | `scoop install minibar` funziona |
 | 4.5 | Avvio automatico opzionale | scorciatoia in `shell:startup` dal menu (niente registro, coerente col vincolo portable) | opzione nel menu contestuale, reversibile |
+
+**4.1** — Preset `ci` che usa il generatore Visual Studio: sui runner `windows-latest` VS
+è già installato e CMake lo trova da solo, quindi non serve né la toolchain portable né
+un'azione di terze parti che prepari l'ambiente. Il workflow usa solo `actions/checkout` e
+`actions/upload-artifact`, entrambe ufficiali, e per allegare l'exe alla release usa `gh`,
+che sui runner è preinstallato. C'è anche un controllo che fallisce la build se
+l'eseguibile supera i 2 MB: il budget della §3 del piano di implementazione diventa così
+una regola verificata a ogni push, non una promessa nel README.
+
+Il preset `ci` non è verificabile su questa macchina, dove Visual Studio non è installato
+(c'è solo MSVC portable): in locale `cmake --preset ci` arriva fino a `project()` e si
+ferma con *«could not find any instance of Visual Studio»*, che dimostra JSON valido e
+preset riconosciuto ma non di più. La prova vera è il primo push. I preset portable
+`release` e `debug` restano intatti e ricompilano puliti.
 
 ## Rimandate (valutare dopo il feedback)
 

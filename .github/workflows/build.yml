@@ -1,0 +1,57 @@
+# Compila MiniBar a ogni push e allega l'eseguibile alle release.
+#
+# Qui non si usa la toolchain portable di tools\: sui runner windows-latest
+# Visual Studio c'e' gia', e il preset "ci" lo fa trovare a CMake senza dover
+# preparare l'ambiente. Meno pezzi in movimento, e nessuna action di terze parti.
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write # serve solo allo step finale, che allega l'exe alla release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake --preset ci
+
+      - name: Build
+        run: cmake --build --preset ci
+
+      # Il budget della sezione 3 del piano dice "eseguibile <= 2 MB". Se una
+      # modifica lo sfonda, e' giusto che se ne accorga la CI e non l'utente.
+      - name: Check the executable
+        shell: pwsh
+        run: |
+          $exe = 'dist/minibar.exe'
+          if (-not (Test-Path $exe)) { throw 'build finita ma dist/minibar.exe non c e' }
+          $kb = [math]::Round((Get-Item $exe).Length / 1KB, 1)
+          "minibar.exe: $kb KB" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          if ($kb -gt 2048) { throw "eseguibile oltre il budget di 2 MB: $kb KB" }
+
+      - name: Upload the build
+        uses: actions/upload-artifact@v4
+        with:
+          name: minibar
+          path: dist/minibar.exe
+          if-no-files-found: error
+
+      # Su un tag v* l'exe appena compilato finisce fra gli asset della release.
+      # gh e' preinstallato sui runner: niente action di terze parti.
+      - name: Attach to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload $env:GITHUB_REF_NAME dist/minibar.exe --clobber

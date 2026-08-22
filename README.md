@@ -1,5 +1,7 @@
 # MiniBar
 
+[![build](https://github.com/AceisX/minibar-now-playing-overlay/actions/workflows/build.yml/badge.svg)](https://github.com/AceisX/minibar-now-playing-overlay/actions/workflows/build.yml)
+
 *[Leggi in italiano](README.it.md)*
 
 **The lightest music overlay for Windows 11.** ~6 MB of RAM, a 260 KB executable, no GPU
