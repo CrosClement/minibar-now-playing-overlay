@@ -1,7 +1,7 @@
 # env.ps1 - attiva la toolchain portable nella sessione corrente.
 #   . E:\CLAUDE\MINIBAR\tools\env.ps1     (nota il punto: dev'essere "dot-sourced")
 
-$Tools = 'E:\CLAUDE\MINIBAR\tools'
+$Tools = $PSScriptRoot   # la cartella di questo script, ovunque stia il repo
 $Msvc  = Join-Path $Tools 'msvc'
 $VcVer = (Get-Content -Raw (Join-Path $Msvc 'msvc-version-dir.txt') -ErrorAction SilentlyContinue)
 if (-not $VcVer) {

@@ -198,6 +198,9 @@ key=M
 
 ## Implementation notes
 
+The full design document — the idea, the hard constraints, the performance budget and the
+reasoning behind every choice — is [docs/design.md](docs/design.md) (in Italian).
+
 ### Software rendering instead of DirectComposition
 
 The obvious way to draw a translucent always-on-top window is a DXGI composition swapchain

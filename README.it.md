@@ -13,9 +13,8 @@ Tidal, YouTube Music nel browser, foobar2000, il lettore di Windows — senza ac
 key o plugin: MiniBar riconosce il player dalla sessione SMTC attiva e da lì risale al suo
 processo, alla sua levetta nel mixer e alla sua finestra.
 
-La specifica completa — vincoli, budget prestazioni, decisioni architetturali — sta in
-[docs/piano-implementazione.md](docs/piano-implementazione.md). Questo file spiega solo
-come si compila e si usa.
+L'idea, i vincoli, il budget prestazioni e il perché delle scelte di progetto stanno in
+[docs/design.md](docs/design.md). Questo file spiega solo come si compila e si usa.
 
 ## Requisiti
 
@@ -51,7 +50,7 @@ tools\pwsh\pwsh.exe -File tools\get-msvc.ps1
 
 `tools\get-msvc.ps1` legge il channel manifest di Visual Studio 2022, scarica i `.vsix`
 di MSVC e gli `.msi` del Windows SDK e li estrae (`msiexec /a`, che non richiede
-elevazione). Niente installer, niente registro, niente file fuori da `E:\CLAUDE\MINIBAR`.
+elevazione). Niente installer, niente registro, niente file fuori dalla cartella del progetto.
 `tools\get-sdk-extra.ps1` aggiunge altri MSI dell'SDK se dovessero servire.
 
 `tools\_dl\` è solo cache di download: si può cancellare (~2 GB) senza rompere nulla.
@@ -290,8 +289,7 @@ centrata può finirci sopra: in quel caso si usa `anchor=right` nell'INI.
 
 I numeri di CPU dipendono da quanti cambi traccia cadono nella finestra di misura: un
 cambio costa il decode della copertina, il calcolo della tinta e 220 ms di dissolvenza.
-Fra un evento e l'altro il processo consuma zero. Metodo e misure voce per voce in
-[docs/piano-azione.md](docs/piano-azione.md).
+Fra un evento e l'altro il processo consuma zero.
 
 ### Stato delle verifiche
 
