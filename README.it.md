@@ -320,15 +320,22 @@ centrata può finirci sopra: in quel caso si usa `anchor=right` nell'INI.
 
 | Metrica | Target §3 | Misurato |
 |---|---|---|
-| Private working set | < 15 MB | ~6 MB (5,5–6,5 secondo il layout) |
-| CPU a riposo | ≈ 0,0 % | centesimi di core: 0,0 % nel Task Manager |
-| Dimensione eseguibile | ≤ 2 MB | 295 KB |
-| Avvio → barretta visibile | < 200 ms | ~50 ms (~110 ms al primo avvio a freddo) |
+| Private working set | < 15 MB | ~7 MB in aspetto barretta, ~5,5 nel riquadro |
+| CPU a riposo | ≈ 0,0 % | 0,03 % di un core fra un evento e l'altro: 0,0 % nel Task Manager |
+| Dimensione eseguibile | ≤ 2 MB | 300 KB |
+| Avvio → barretta visibile | < 200 ms | ~57 ms |
 | GPU fra i ridisegni | 0 % | 0 % (nessun device GPU) |
 
 I numeri di CPU dipendono da quanti cambi traccia cadono nella finestra di misura: un
 cambio costa il decode della copertina, il calcolo della tinta e 220 ms di dissolvenza.
-Fra un evento e l'altro il processo consuma zero.
+Misurato su tre finestre da 60 s di seguito: 0,025 % in quella senza cambi traccia, 0,077 %
+e 0,332 % nelle due che ne contenevano uno. Fra un evento e l'altro il processo consuma
+zero.
+
+Anche l'avvio ha una nota: i 57 ms sono la mediana di cinque avvii a caldo. La primissima
+esecuzione di un eseguibile appena scritto o appena scaricato è molto più lenta e molto
+variabile — misurata fra 110 e 580 ms sulla stessa macchina — perché Windows lo analizza
+prima di lasciarlo partire.
 
 ### Stato delle verifiche
 

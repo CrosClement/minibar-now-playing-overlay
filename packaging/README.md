@@ -38,8 +38,20 @@ the automated validation in winget-pkgs cannot download the installer.
 
 ## Scoop — `scoop/minibar.json`
 
-Ready for a personal bucket, or for a pull request to
-[ScoopInstaller/Extras](https://github.com/ScoopInstaller/Extras).
+This file is the source of truth; the copy people actually install from lives in the bucket
+at [AceisX/scoop-bucket](https://github.com/AceisX/scoop-bucket), which is what these
+instructions in the README point at:
+
+```powershell
+scoop bucket add aceisx https://github.com/AceisX/scoop-bucket
+scoop install minibar
+```
+
+Publishing a new version means copying this file into that repository — the bucket expects
+the manifest at its root, named `minibar.json` — and pushing. A pull request to
+[ScoopInstaller/Extras](https://github.com/ScoopInstaller/Extras) is the other option, and
+would drop the `scoop bucket add` step for users, but then the manifest lives on somebody
+else's release schedule.
 
 `checkver` and `autoupdate` are wired to the GitHub releases, so `scoop update` and the
 bucket's own automation pick up a new version by themselves — as long as the asset keeps
@@ -51,9 +63,13 @@ update.
 
 ## When a new version goes out
 
-1. Publish the release with `minibar.exe` attached (the CI does this on a `v*` tag).
+1. Tag `v<version>` and let the release go out. **Wait for the CI to finish**: the workflow
+   runs `gh release upload --clobber` on a tag, so the executable that ends up attached to
+   the release is the one the CI built, overwriting anything uploaded by hand. Hashing
+   before that finishes gives you the hash of a file that is about to be replaced.
 2. Hash the released asset, as above.
 3. In `winget/`, bump `PackageVersion` in all three files, and update `InstallerUrl`,
    `InstallerSha256`, `ReleaseDate` and `ReleaseNotesUrl` in the installer and locale
    manifests. Re-run `winget validate`.
-4. In `scoop/minibar.json`, bump `version`, `url` and `hash`.
+4. In `scoop/minibar.json`, bump `version`, `url` and `hash`, then copy it into the bucket
+   repository and push.

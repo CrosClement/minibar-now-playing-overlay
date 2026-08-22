@@ -4,7 +4,7 @@
 
 *[Leggi in italiano](README.it.md)*
 
-**The lightest music overlay for Windows 11.** ~6 MB of RAM, a sub-300 KB executable, no GPU
+**The lightest music overlay for Windows 11.** ~7 MB of RAM, a ~300 KB executable, no GPU
 work between redraws, and not a single hook or injected DLL — so it is safe to run next to
 an anti-cheat.
 
@@ -23,11 +23,17 @@ changes and sleeps in the message loop the rest of the time.
 
 | | Measured |
 |---|---|
-| RAM (private working set) | **~6 MB** |
-| Executable | **295 KB**, no runtime to install |
-| CPU at rest | **0.0 %** in Task Manager (hundredths of a core) |
+| RAM (private working set) | **~7 MB** in the bar look, ~5.5 MB in the tile |
+| Executable | **300 KB**, no runtime to install |
+| CPU at rest | **0.03 %** of one core between events — **0.0 %** in Task Manager |
 | GPU between redraws | **0 %** — there is no GPU device at all |
-| Cold start to visible bar | **~50 ms** (~110 ms the very first run, before the file cache is warm) |
+| Start to visible bar | **~57 ms** |
+
+A track change costs more than nothing — decoding the cover, picking its color, fading it
+in — so a minute that contains one measures a few tenths of a percent instead of a few
+hundredths. Between events the process does nothing at all. The first run of a freshly
+downloaded executable is also slower than 57 ms, by a lot and unpredictably: Windows scans a
+new file before letting it run.
 
 It also never touches another process. No DLL injection, no DirectX or Vulkan hooks, no
 global `SetWindowsHookEx`. Everything it knows about other applications it learns through

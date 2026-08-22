@@ -1,8 +1,8 @@
 # MiniBar — Design
 
 > L'idea, i vincoli e le scelte di progetto dietro MiniBar: una barretta musicale nativa
-> per Windows 11 che legge le API media di sistema, controlla la riproduzione e alleggerisce
-> il player. Questo documento spiega **perché** le cose sono fatte così; il
+> per Windows 11 che legge le API media di sistema, controlla la riproduzione e toglie di
+> mezzo la finestra del player. Questo documento spiega **perché** le cose sono fatte così; il
 > [README](../README.it.md) spiega come si compila e si usa.
 
 | | |
@@ -73,13 +73,13 @@ il risparmio altrui.
 Questi numeri sono **requisiti, non speranze**: ogni modifica si accetta solo se li
 rispetta, e la CI fallisce se l'eseguibile sfora.
 
-| Metrica | Target | Misurato (1.0) | Come si misura |
+| Metrica | Target | Misurato (1.1) | Come si misura |
 |---|---|---|---|
-| RAM (private working set a regime) | < 15 MB | ~6 MB | Task Manager, "Working set (privato)", dopo minuti di riproduzione |
+| RAM (private working set a regime) | < 15 MB | ~7 MB (barretta), ~5,5 (riquadro) | Task Manager, "Working set (privato)", dopo minuti di riproduzione |
 | CPU a riposo | ≈ 0,0 % | 0,0 % (centesimi di core) | Task Manager, media su 60 s senza hover |
 | GPU fra un ridisegno e l'altro | 0 % | 0 % — non esiste un device GPU | Task Manager scheda GPU / PresentMon |
-| Dimensione eseguibile | ≤ 2 MB | 260 KB | build Release, controllato dalla CI |
-| Avvio (processo → barretta visibile) | < 200 ms | ~50 ms (~110 a freddo) | timestamp |
+| Dimensione eseguibile | ≤ 2 MB | 300 KB | build Release, controllato dalla CI |
+| Avvio (processo → barretta visibile) | < 200 ms | ~57 ms (mediana di 5 a caldo) | timestamp |
 | Impatto sul frametime di un gioco | non misurabile | — | PresentMon con e senza overlay |
 
 Il principio che li rende raggiungibili: **zero lavoro se non cambia niente**. Non c'è un
