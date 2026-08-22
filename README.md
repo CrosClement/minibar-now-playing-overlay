@@ -107,7 +107,7 @@ it instead of hiding it. Any of the four edges, from **Edge** in the menu.
 <img src="docs/media/docked.png" width="952" alt="Docked to an edge">
 
 On the left and right edges the strip is narrow and tall, so it uses a column layout
-instead: cover, progress, and the three controls stacked, centred vertically. There is no
+instead: cover, progress, and the three controls stacked, centered vertically. There is no
 text there — 56 DIP is not enough for a title, and rotating it would be worse than leaving
 it out.
 

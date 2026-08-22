@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
 PackageIdentifier: AceisX.MiniBar
-PackageVersion: 1.0.0
+PackageVersion: 1.1.0
 PackageLocale: en-US
 Publisher: AceisX
 PublisherUrl: https://github.com/AceisX
@@ -18,7 +18,7 @@ Description: |-
   one - Spotify, Tidal, YouTube Music in a browser, foobar2000 - with no account, API key
   or plugin.
 
-  It uses about 6 MB of RAM, ships as a single 260 KB executable with no runtime to
+  It uses about 7 MB of RAM, ships as a single ~300 KB executable with no runtime to
   install, and does no GPU work between redraws. It never injects a DLL and never installs
   a hook, so it is safe to run alongside anti-cheat software.
 
@@ -36,6 +36,6 @@ Tags:
   - smtc
   - spotify
   - taskbar
-ReleaseNotesUrl: https://github.com/AceisX/minibar-now-playing-overlay/releases/tag/v1.0.0
+ReleaseNotesUrl: https://github.com/AceisX/minibar-now-playing-overlay/releases/tag/v1.1.0
 ManifestType: defaultLocale
 ManifestVersion: 1.6.0
