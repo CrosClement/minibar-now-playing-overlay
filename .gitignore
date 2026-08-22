@@ -6,6 +6,7 @@ tools/ninja/
 tools/pwsh/
 tools/git/
 tools/gh/
+tools/ffmpeg/
 tools/_dl/
 
 # Output di build
