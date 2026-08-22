@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest something MiniBar should do
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        MiniBar is small on purpose. Two things are refused on principle — anything that
+        needs a hook or injection into other processes, and anything that keeps working
+        when nothing is happening (see CONTRIBUTING.md). Everything else is open to discussion.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does it solve?
+      description: What do you do today, and what is annoying about it?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like to happen?
+      description: Describe the behavior, not the implementation. If it is visual, a sketch or a reference helps.
+    validations:
+      required: true
+  - type: textarea
+    id: cost
+    attributes:
+      label: Where would the cost go?
+      description: Optional. If you have an idea of what it needs (a timer, a new API, a setting), say so — it speeds up the conversation.

@@ -1,0 +1,61 @@
+name: Bug report
+description: Something does not work as described
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Most problems with an overlay depend on the environment. The four things below are
+        usually the whole diagnosis, so please fill them in.
+  - type: input
+    id: version
+    attributes:
+      label: MiniBar version
+      description: From the release you downloaded, or the commit if you built it.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows build
+      description: Run `winver` — e.g. "Windows 11 24H2, build 26100.4061".
+    validations:
+      required: true
+  - type: input
+    id: player
+    attributes:
+      label: Player
+      description: Which application was playing, and where (desktop app, Store app, browser tab).
+      placeholder: "Spotify desktop 1.2.x"
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode and look
+      options:
+        - Overlay, bar
+        - Overlay, tile
+        - Docked
+        - In the taskbar
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you saw instead. A screenshot helps if it is visual.
+    validations:
+      required: true
+  - type: textarea
+    id: ini
+    attributes:
+      label: minibar.ini
+      description: Paste the file (it sits next to minibar.exe). Remove `x=` / `y=` if you prefer.
+      render: ini
+  - type: textarea
+    id: display
+    attributes:
+      label: Display setup
+      description: Number of monitors, scaling (100 %, 150 %...), taskbar position and whether it auto-hides. Only if it could matter.
