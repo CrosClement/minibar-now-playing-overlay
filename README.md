@@ -44,8 +44,15 @@ That is the whole procedure. The executable is self-contained — static CRT, no
 redistributable, no DLLs next to it — and it is portable: the only file it ever writes is
 `minibar.ini`, right beside itself. Nothing goes into AppData or the registry.
 
-Package managers are coming: `winget install minibar` and `scoop install minibar` once
-there is a stable versioned release.
+With [Scoop](https://scoop.sh):
+
+```powershell
+scoop bucket add aceisx https://github.com/AceisX/scoop-bucket
+scoop install minibar
+```
+
+`winget install minibar` is on its way: the manifest is submitted to the community
+repository and will appear once it is merged.
 
 **Requirements:** Windows 11 x64. Nothing else.
 

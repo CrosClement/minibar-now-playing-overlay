@@ -7,6 +7,8 @@ tools/pwsh/
 tools/git/
 tools/gh/
 tools/ffmpeg/
+tools/wingetcreate/
+tools/dotnet/
 tools/_dl/
 
 # Output di build
