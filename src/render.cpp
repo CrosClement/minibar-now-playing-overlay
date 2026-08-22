@@ -494,7 +494,7 @@ void Renderer::Draw(const RenderState& st) {
         rt_->FillRoundedRectangle(tr, brush_.get());
 
         // Subito dopo una rotellina la stessa striscia mostra per un attimo il
-        // volume di Spotify, in chiaro invece che in verde: nessun pannello che
+        // volume del player, in chiaro invece che in verde: nessun pannello che
         // compare, nessun pixel in più occupato.
         const bool showVol = st.volume >= 0.f;
         double     frac    = -1.0;

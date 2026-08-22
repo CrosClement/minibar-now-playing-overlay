@@ -40,9 +40,16 @@ struct MenuState {
     OverlayLayout layout       = OverlayLayout::Bar;
     bool          autoMinimize = true;
     bool          barVisible   = true;
+
+    // Selettore di player: le sessioni SMTC attive, quale è bloccata in
+    // configurazione (vuoto = automatico) e il nome di quella in uso ora.
+    std::vector<std::wstring> sessions;
+    std::wstring              preferred;
+    std::wstring              playerName;
 };
 
-// Ritorna l'id del comando scelto, 0 se annullato.
+// Ritorna l'id del comando scelto, 0 se annullato. Gli id delle sessioni
+// (IDM_SESSION_FIRST + n) indicizzano `state.sessions`.
 UINT ShowContextMenu(HWND hwnd, POINT screenPt, const MenuState& state);
 
 }  // namespace win

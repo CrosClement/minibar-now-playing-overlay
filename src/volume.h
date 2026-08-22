@@ -1,35 +1,39 @@
-// volume.h — volume della sola Spotify, non del sistema.
+// volume.h — volume del solo player, non del sistema.
 //
 // La sessione audio di un processo si raggiunge con IAudioSessionManager2 sul
 // dispositivo di uscita predefinito: ISimpleAudioVolume è esattamente la
-// levetta che Windows mostra nel mixer, quindi si muove solo Spotify e non il
+// levetta che Windows mostra nel mixer, quindi si muove solo il player e non il
 // volume generale. Tutto out-of-process, coerente con la §2 del piano.
 //
-// La sessione viene tenuta in cache: si rilega solo quando quella in mano è
-// scaduta (Spotify chiusa e riaperta) o quando non ce n'è ancora una.
+// Quale sia il player lo dice la sessione SMTC attiva: la sua identità
+// (SourceAppUserModelId) viene confrontata col processo proprietario di ogni
+// sessione del mixer. La sessione trovata resta in cache e si rilega solo se
+// scade (player chiuso e riaperto) o se cambia il player in ascolto.
 #pragma once
 #include "common.h"
 
 #include <audiopolicy.h>
 #include <winrt/base.h>
 
-class SpotifyVolume {
+class PlayerVolume {
 public:
-    // Volume corrente 0-1, oppure -1 se Spotify non ha una sessione audio
+    // Volume corrente 0-1, oppure -1 se il player non ha una sessione audio
     // (non è in esecuzione, o non ha mai emesso un suono).
-    float Get();
+    float Get(const std::wstring& appKey);
 
     // Somma delta al volume con clamp 0-1 e toglie il mute se si sale.
     // Torna il nuovo volume, o -1 se non c'è niente da muovere.
-    float Nudge(float delta);
+    float Nudge(const std::wstring& appKey, float delta);
 
     // Torna il livello risultante (0 se ha appena mutato), -1 se non applicabile.
-    float ToggleMute();
+    float ToggleMute(const std::wstring& appKey);
 
 private:
-    bool Bind();   // cerca la sessione di spotify.exe e la mette in cache
-    bool Alive();  // vero se la sessione in cache è ancora utilizzabile
+    bool Ensure(const std::wstring& appKey);  // cache valida, o rilega
+    bool Bind(const std::wstring& appKey);    // cerca la sessione del player
+    bool Alive() const;                       // la sessione in cache è ancora usabile
 
+    std::wstring                         bound_;  // player a cui appartiene la cache
     winrt::com_ptr<IAudioSessionControl> control_;
     winrt::com_ptr<ISimpleAudioVolume>   volume_;
 };

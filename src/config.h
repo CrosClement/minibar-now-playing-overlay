@@ -26,10 +26,11 @@ struct Config {
     // [taskbar]
     TaskbarAnchor taskbarAnchor = TaskbarAnchor::Auto;
 
-    // [spotify]
-    bool autoMinimize    = true;
-    bool hideInstead     = false;
-    bool launchIfMissing = false;
+    // [player] — letta anche da [spotify], come si chiamava fino alla 1.0.
+    bool         autoMinimize    = true;
+    bool         hideInstead     = false;
+    bool         launchIfMissing = false;
+    std::wstring launchPath;  // vuoto = percorsi tipici dedotti dal nome
 
     // [volume]
     int volumeStep = 4;  // punti percentuali per scatto di rotellina
@@ -47,6 +48,7 @@ struct Config {
     void SaveOverlaySize(int dip);
 
     void SavePosition(int nx, int ny);
+    void SavePreferredApp(const std::wstring& app);
     void SaveMode(BarMode m);
     void SaveOverlayLayout(OverlayLayout l);
     void SaveAutoMinimize(bool v);

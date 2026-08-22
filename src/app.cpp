@@ -47,22 +47,23 @@ bool App::Init(HINSTANCE inst) {
 
     if (!win::RegisterBarClass(inst, WndProc, icon_)) return false;
 
-    // Se un'esecuzione precedente è morta con Spotify nascosto, si recupera qui.
-    spotify_.RecoverOrphan();
+    // Se un'esecuzione precedente è morta con un player nascosto, si recupera qui.
+    player_.RecoverOrphan();
 
     if (!CreateBar()) return false;
 
     smtc_.Start(hwnd_, cfg_.preferredApp);
 
-    // Un attimo di ritardo: se Spotify è appena partito la sua finestra
-    // potrebbe non esistere ancora.
-    SetTimer(hwnd_, IDT_SPOTIFY, 1200, nullptr);
+    // Un attimo di ritardo: serve a dare tempo alla sessione SMTC di arrivare
+    // (è lei a dire quale sia il player) e alla finestra di comparire se il
+    // player è appena partito.
+    SetTimer(hwnd_, IDT_PLAYER, 1200, nullptr);
     return true;
 }
 
 void App::Shutdown() {
     smtc_.Stop();
-    spotify_.Restore();  // garantito: mai lasciare una finestra nascosta orfana
+    player_.Restore();  // garantito: mai lasciare una finestra nascosta orfana
     quitting_ = true;
     DestroyBar();
 }
@@ -129,7 +130,7 @@ void App::DestroyBar() {
         hotkeyRegistered_ = false;
     }
     for (UINT_PTR id :
-         {IDT_CURSOR, IDT_TICK, IDT_TOPMOST, IDT_FADE, IDT_UNHOVER, IDT_SPOTIFY, IDT_VOLUME})
+         {IDT_CURSOR, IDT_TICK, IDT_TOPMOST, IDT_FADE, IDT_UNHOVER, IDT_PLAYER, IDT_VOLUME})
         KillTimer(hwnd_, id);
     unhoverArmed_ = false;
     hovered_      = false;
@@ -396,11 +397,37 @@ void App::ToggleBarVisible() {
     }
 }
 
-void App::ApplySpotifyPolicy() {
-    if (spotifyApplied_ || !cfg_.autoMinimize) return;
-    if (cfg_.launchIfMissing && !SpotifyManager::IsRunning()) SpotifyManager::Launch(true);
-    spotify_.Apply(cfg_.hideInstead);
-    spotifyApplied_ = true;
+std::wstring App::PlayerKey() const {
+    const std::wstring current = smtc_.CurrentAppId();
+    return current.empty() ? cfg_.preferredApp : current;
+}
+
+void App::ApplyPlayerPolicy() {
+    if (playerApplied_ || !cfg_.autoMinimize) return;
+
+    const std::wstring key = PlayerKey();
+    if (key.empty()) return;
+
+    if (cfg_.launchIfMissing && !PlayerManager::IsRunning(key))
+        PlayerManager::Launch(key, cfg_.launchPath);
+    player_.Apply(key, cfg_.hideInstead);
+    playerApplied_ = true;
+}
+
+void App::SelectPlayer(const std::wstring& appId) {
+    if (appId == cfg_.preferredApp) return;
+
+    // Il player di prima resta minimizzato — è quello che si voleva — ma se era
+    // nascosto va ripristinato subito: senza finestra e senza marker non
+    // sarebbe più raggiungibile.
+    if (player_.DidHide()) player_.Restore();
+
+    cfg_.SavePreferredApp(appId);
+    smtc_.SetPreferred(appId);
+
+    playerApplied_ = false;
+    ApplyPlayerPolicy();
+    Redraw();
 }
 
 void App::FlashVolume(float level) {
@@ -410,15 +437,37 @@ void App::FlashVolume(float level) {
     Redraw();
 }
 
-// Vero se il volume di Spotify è stato mosso davvero: se Spotify non ha una
-// sessione audio (chiusa, o che non ha mai suonato) la rotellina resta libera
+// Vero se il volume del player è stato mosso davvero: se il player non ha una
+// sessione audio (chiuso, o che non ha mai suonato) la rotellina resta libera
 // per il ridimensionamento.
 bool App::NudgeVolume(int wheelDelta) {
     const float step  = static_cast<float>(cfg_.volumeStep) / 100.f;
-    const float level = spotifyVolume_.Nudge(wheelDelta > 0 ? step : -step);
+    const float level = volume_.Nudge(PlayerKey(), wheelDelta > 0 ? step : -step);
     if (level < 0.f) return false;
     FlashVolume(level);
     return true;
+}
+
+void App::ShowMenu(POINT screenPt) {
+    win::MenuState ms;
+    ms.mode         = cfg_.mode;
+    ms.layout       = cfg_.overlayLayout;
+    ms.autoMinimize = cfg_.autoMinimize;
+    ms.barVisible   = barVisible_;
+    ms.sessions     = smtc_.ListSessions();
+    ms.preferred    = cfg_.preferredApp;
+    ms.playerName   = PlayerManager::FriendlyName(PlayerKey());
+
+    const UINT cmd = win::ShowContextMenu(hwnd_, screenPt, ms);
+
+    if (cmd == IDM_SESSION_AUTO) {
+        SelectPlayer({});  // nessun vincolo: si segue la sessione di sistema
+    } else if (cmd >= IDM_SESSION_FIRST && cmd <= IDM_SESSION_LAST) {
+        const size_t index = cmd - IDM_SESSION_FIRST;
+        if (index < ms.sessions.size()) SelectPlayer(ms.sessions[index]);
+    } else {
+        OnCommand(cmd);
+    }
 }
 
 void App::OnCommand(UINT id) {
@@ -434,18 +483,16 @@ void App::OnCommand(UINT id) {
 
         case IDM_AUTOMIN_TOGGLE:
             cfg_.SaveAutoMinimize(!cfg_.autoMinimize);
-            if (cfg_.autoMinimize) {
-                spotifyApplied_ = false;
-                ApplySpotifyPolicy();
-            } else {
-                spotify_.Restore();
-                spotifyApplied_ = false;
-            }
+            playerApplied_ = false;
+            if (cfg_.autoMinimize)
+                ApplyPlayerPolicy();
+            else
+                player_.Restore();
             break;
 
-        case IDM_SPOTIFY_RESTORE:
-            spotify_.Restore();
-            spotifyApplied_ = false;
+        case IDM_PLAYER_RESTORE:
+            player_.Restore();
+            playerApplied_ = false;
             break;
 
         case IDM_OPEN_INI:
@@ -551,9 +598,9 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
                     // Mai spingere alla cieca: si ri-asserisce solo se serve.
                     if (ForegroundWatch::IsCovered(hwnd_)) ForegroundWatch::AssertTopmost(hwnd_);
                     break;
-                case IDT_SPOTIFY:
-                    KillTimer(hwnd_, IDT_SPOTIFY);
-                    ApplySpotifyPolicy();
+                case IDT_PLAYER:
+                    KillTimer(hwnd_, IDT_PLAYER);
+                    ApplyPlayerPolicy();
                     break;
                 case IDT_VOLUME:
                     KillTimer(hwnd_, IDT_VOLUME);
@@ -581,9 +628,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_APP_TRAY: {
             const UINT event = LOWORD(lParam);
             if (event == WM_CONTEXTMENU || event == WM_RBUTTONUP) {
-                POINT pt{GET_X_LPARAM(wParam), GET_Y_LPARAM(wParam)};
-                win::MenuState ms{cfg_.mode, cfg_.overlayLayout, cfg_.autoMinimize, barVisible_};
-                OnCommand(win::ShowContextMenu(hwnd_, pt, ms));
+                ShowMenu(POINT{GET_X_LPARAM(wParam), GET_Y_LPARAM(wParam)});
             } else if (event == WM_LBUTTONDBLCLK) {
                 ToggleBarVisible();
             }
@@ -659,7 +704,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
         }
 
         case WM_MOUSEWHEEL: {
-            // Rotellina = volume della sola Spotify; con Ctrl (o se Spotify non
+            // Rotellina = volume del solo player; con Ctrl (o se il player non
             // sta suonando) ridimensiona la barretta come prima. Richiede che
             // sia attivo "scorri le finestre inattive" (predefinito in Win 11).
             const int delta = GET_WHEEL_DELTA_WPARAM(wParam);
@@ -676,8 +721,8 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
         }
 
         case WM_MBUTTONDOWN: {
-            // Mute di Spotify: un gesto, zero pixel di interfaccia.
-            const float level = spotifyVolume_.ToggleMute();
+            // Mute del player: un gesto, zero pixel di interfaccia.
+            const float level = volume_.ToggleMute(PlayerKey());
             if (level >= 0.f) FlashVolume(level);
             return 0;
         }
@@ -685,8 +730,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_RBUTTONUP: {
             POINT pt{};
             GetCursorPos(&pt);
-            win::MenuState ms{cfg_.mode, cfg_.overlayLayout, cfg_.autoMinimize, barVisible_};
-            OnCommand(win::ShowContextMenu(hwnd_, pt, ms));
+            ShowMenu(pt);
             return 0;
         }
 
@@ -740,11 +784,11 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
             return 0;
 
         case WM_QUERYENDSESSION:
-            spotify_.Restore();
+            player_.Restore();
             return TRUE;
 
         case WM_ENDSESSION:
-            spotify_.Restore();
+            player_.Restore();
             return 0;
 
         case WM_CLOSE:

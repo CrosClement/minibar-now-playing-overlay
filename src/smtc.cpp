@@ -20,6 +20,7 @@ using PlaybackState = GlobalSystemMediaTransportControlsSessionPlaybackStatus;
 struct SmtcService::Impl {
     HWND         hwnd = nullptr;
     std::wstring preferred;
+    std::wstring currentApp;  // solo thread UI
 
     std::atomic<bool>     alive{false};
     std::atomic<uint32_t> gen{0};
@@ -154,6 +155,7 @@ void SmtcService::Rebind(HWND hwnd) {
 
 void SmtcService::Stop() {
     if (!d_ || !d_->alive.exchange(false)) return;
+    d_->currentApp.clear();
     try {
         if (d_->session) {
             d_->session.MediaPropertiesChanged(d_->tokMedia);
@@ -202,9 +204,11 @@ void SmtcService::SelectSession() {
         const uint32_t gen = d_->gen.fetch_add(1) + 1;
         d_->session        = picked;
         if (!picked) {
+            d_->currentApp.clear();
             PostMessageW(d_->hwnd, WM_APP_MEDIA, gen, 0);  // niente sessione: pulisci la UI
             return;
         }
+        d_->currentApp = picked.SourceAppUserModelId();
 
         auto d          = d_;
         d_->tokMedia    = picked.MediaPropertiesChanged(
@@ -223,6 +227,35 @@ void SmtcService::SelectSession() {
         PullAll();
     } catch (...) {
     }
+}
+
+std::wstring SmtcService::CurrentAppId() const { return d_->currentApp; }
+
+std::vector<std::wstring> SmtcService::ListSessions() const {
+    std::vector<std::wstring> out;
+    if (!d_->alive || !d_->mgr) return out;
+    try {
+        for (auto&& s : d_->mgr.GetSessions()) {
+            std::wstring id{s.SourceAppUserModelId()};
+            if (id.empty()) continue;
+            // Due schede del browser sono due sessioni della stessa app: nel
+            // menu la voce deve restare una.
+            bool seen = false;
+            for (const auto& have : out)
+                if (CompareStringOrdinal(have.c_str(), -1, id.c_str(), -1, TRUE) == CSTR_EQUAL) {
+                    seen = true;
+                    break;
+                }
+            if (!seen) out.push_back(std::move(id));
+        }
+    } catch (...) {
+    }
+    return out;
+}
+
+void SmtcService::SetPreferred(std::wstring app) {
+    d_->preferred = std::move(app);
+    if (d_->alive && d_->mgr) SelectSession();
 }
 
 void SmtcService::PullAll() {

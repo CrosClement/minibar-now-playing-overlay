@@ -6,9 +6,9 @@
 #include "appbar.h"
 #include "config.h"
 #include "foreground.h"
+#include "player.h"
 #include "render.h"
 #include "smtc.h"
-#include "spotify.h"
 #include "volume.h"
 
 class App {
@@ -35,9 +35,15 @@ private:
     void OnCursorTick();
     void OnFadeTick();
     void SetHovered(bool hovered);
+    void ShowMenu(POINT screenPt);
     void OnCommand(UINT id);
     void ToggleBarVisible();
-    void ApplySpotifyPolicy();
+    void ApplyPlayerPolicy();
+
+    // Player su cui agiscono volume e minimizzazione: la sessione SMTC in corso
+    // se c'è, altrimenti la stringa preferred_app dell'INI.
+    std::wstring PlayerKey() const;
+    void         SelectPlayer(const std::wstring& appId);
 
     // Mostra il livello sulla striscia della progress bar per un attimo.
     void FlashVolume(float level);
@@ -55,8 +61,8 @@ private:
     Config          cfg_;
     Renderer        renderer_;
     SmtcService     smtc_;
-    SpotifyManager  spotify_;
-    SpotifyVolume   spotifyVolume_;
+    PlayerManager   player_;
+    PlayerVolume    volume_;
     ForegroundWatch foreground_;
     AppBar          appbar_;
 
@@ -84,7 +90,7 @@ private:
     POINT dragCursor_{};
     POINT dragOrigin_{};
 
-    // Volume di Spotify: livello mostrato e istante in cui smette di mostrarsi.
+    // Volume del player: livello mostrato e istante in cui smette di mostrarsi.
     float     volumeLevel_      = -1.f;
     ULONGLONG volumeShownUntil_ = 0;
 
@@ -98,6 +104,6 @@ private:
 
     bool barVisible_       = true;
     bool quitting_         = false;
-    bool spotifyApplied_   = false;
+    bool playerApplied_    = false;
     bool hotkeyRegistered_ = false;
 };

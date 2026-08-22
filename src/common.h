@@ -27,16 +27,21 @@ enum : UINT {
 
 // Comandi del menu contestuale / tray.
 enum : UINT {
-    IDM_MODE_OVERLAY    = 1001,
-    IDM_MODE_DOCKED     = 1002,
-    IDM_MODE_TASKBAR    = 1003,
-    IDM_LAYOUT_BAR      = 1004,
-    IDM_LAYOUT_TILE     = 1005,
-    IDM_AUTOMIN_TOGGLE  = 1006,
-    IDM_BAR_TOGGLE      = 1007,
-    IDM_SPOTIFY_RESTORE = 1008,
-    IDM_OPEN_INI        = 1009,
-    IDM_EXIT            = 1010,
+    IDM_MODE_OVERLAY   = 1001,
+    IDM_MODE_DOCKED    = 1002,
+    IDM_MODE_TASKBAR   = 1003,
+    IDM_LAYOUT_BAR     = 1004,
+    IDM_LAYOUT_TILE    = 1005,
+    IDM_AUTOMIN_TOGGLE = 1006,
+    IDM_BAR_TOGGLE     = 1007,
+    IDM_PLAYER_RESTORE = 1008,
+    IDM_OPEN_INI       = 1009,
+    IDM_EXIT           = 1010,
+
+    // Selettore di sessione: la voce automatica più una per player attivo.
+    IDM_SESSION_AUTO  = 1100,
+    IDM_SESSION_FIRST = 1101,
+    IDM_SESSION_LAST  = 1132,
 };
 
 // Timer.
@@ -46,7 +51,7 @@ enum : UINT_PTR {
     IDT_TOPMOST = 3,  // fallback z-order, 7 s
     IDT_FADE    = 4,  // transizione opacità
     IDT_UNHOVER = 5,  // isteresi uscita hover (one-shot)
-    IDT_SPOTIFY = 6,  // applicazione ritardata della policy Spotify (one-shot)
+    IDT_PLAYER  = 6,  // applicazione ritardata della policy sul player (one-shot)
     IDT_VOLUME  = 7,  // fine del lampeggio del volume (one-shot)
 };
 

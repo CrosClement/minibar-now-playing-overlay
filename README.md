@@ -1,7 +1,12 @@
 # MiniBar
 
 Mini player musicale nativo per Windows 11: una barretta overlay che legge le API media
-di sistema (SMTC), controlla la riproduzione e alleggerisce Spotify minimizzandolo.
+di sistema (SMTC), controlla la riproduzione e alleggerisce il player minimizzandolo.
+
+Funziona con qualunque applicazione registri una sessione media di sistema — Spotify,
+Tidal, YouTube Music nel browser, foobar2000, il lettore di Windows — senza account, API
+key o plugin: MiniBar riconosce il player dalla sessione SMTC attiva e da lì risale al suo
+processo, alla sua levetta nel mixer e alla sua finestra.
 
 La specifica completa — vincoli, budget prestazioni, decisioni architetturali — sta in
 [docs/piano-implementazione.md](docs/piano-implementazione.md). Questo file spiega solo
@@ -59,7 +64,9 @@ Al primo avvio `minibar.exe` crea `minibar.ini` accanto a sé (quindi in `dist\`
 ```ini
 [general]
 mode=overlay          ; overlay | docked | taskbar
-preferred_app=Spotify ; sottostringa del SourceAppUserModelId della sessione preferita
+preferred_app=Spotify ; sottostringa del SourceAppUserModelId della sessione preferita;
+                      ; vuoto = segui la sessione corrente di sistema. Si sceglie anche
+                      ; dal menu: tasto destro → Player
 
 [overlay]
 layout=bar            ; bar (barretta orizzontale) | tile (riquadro con la copertina)
@@ -76,10 +83,11 @@ anchor=auto           ; auto | left | center | right
                       ; auto: a sinistra se le app sono al centro,
                       ;       al centro se le app sono a sinistra
 
-[spotify]
-auto_minimize=1       ; minimizza Spotify all'avvio di MiniBar
+[player]              ; si chiamava [spotify] fino alla 1.0: i vecchi INI si leggono ancora
+auto_minimize=1       ; minimizza il player all'avvio di MiniBar
 hide_instead=0        ; 1 = SW_HIDE invece di SW_MINIMIZE (più aggressivo)
-launch_if_missing=0   ; avvia Spotify con --minimized se non è in esecuzione
+launch_if_missing=0   ; avvia il player se non è in esecuzione
+launch_path=          ; eseguibile da avviare; vuoto = percorsi tipici dedotti dal nome
 
 [volume]
 wheel_step=4          ; punti percentuali di volume per scatto di rotellina, 1-25
@@ -118,32 +126,36 @@ Si cambia modalità e aspetto dal menu col tasto destro, o dall'icona nella tray
 | Play/pausa, precedente, successivo | click sui pulsanti |
 | Seek | click sulla progress bar (se il player lo consente) |
 | Spostare la barretta | trascinarla (solo in overlay); la posizione si salva |
-| **Alzare/abbassare il volume di Spotify** | **rotellina del mouse sopra la barretta** |
-| **Mute di Spotify** | **click col tasto centrale sulla barretta** |
+| **Alzare/abbassare il volume del player** | **rotellina del mouse sopra la barretta** |
+| **Mute del player** | **click col tasto centrale sulla barretta** |
 | Cambiare larghezza | **Ctrl** + rotellina sopra la barretta (solo in overlay), oppure `bar_width` / `tile_size` nell'INI |
 | Cambiare modalità o aspetto | tasto destro → Modalità / Aspetto |
+| Scegliere quale player seguire | tasto destro → Player (elenca le sessioni attive) |
 | Menu | tasto destro sulla barretta o sull'icona nella tray |
 | Mostrare/nascondere | doppio click sull'icona nella tray, o hotkey se attiva |
 
 La rotellina (volume e ridimensionamento) dipende dall'impostazione di Windows "scorri le
 finestre inattive quando ci passo sopra", attiva per impostazione predefinita.
 
-### Il volume è quello di Spotify, non quello di sistema
+### Il volume è quello del player, non quello di sistema
 
-MiniBar muove la levetta di Spotify nel mixer di Windows (`ISimpleAudioVolume` sulla
-sessione audio del processo), quindi il volume degli altri programmi non si tocca. Se
-Spotify non ha una sessione audio — non è in esecuzione, oppure non ha ancora emesso un
-suono — non c'è niente da muovere e la rotellina torna a ridimensionare la barretta come
-prima, senza Ctrl. Il livello si mostra per un secondo e mezzo sulla striscia della
-progress bar, in chiaro invece che in verde: nessun pannello che compare, nessun pixel in
-più occupato.
+MiniBar muove la levetta del player nel mixer di Windows (`ISimpleAudioVolume` sulla
+sessione audio del processo), quindi il volume degli altri programmi non si tocca. Quale
+sia il processo lo dice la sessione SMTC in corso: il suo `SourceAppUserModelId` viene
+confrontato col proprietario di ogni sessione del mixer, per nome dell'eseguibile o per
+AUMID se l'app è impacchettata. Se il player non ha una sessione audio — non è in
+esecuzione, oppure non ha ancora emesso un suono — non c'è niente da muovere e la
+rotellina torna a ridimensionare la barretta come prima, senza Ctrl. Il livello si mostra
+per un secondo e mezzo sulla striscia della progress bar, in chiaro invece che in verde:
+nessun pannello che compare, nessun pixel in più occupato.
 
 Le interfacce Core Audio si creano al primo uso della rotellina, non all'avvio, e la
-sessione trovata resta in cache finché non scade: chi non tocca mai il volume non paga
-niente, né in memoria né in thread.
+sessione trovata resta in cache finché non scade o finché non cambia il player in ascolto:
+chi non tocca mai il volume non paga niente, né in memoria né in thread.
 
-Chiudendo MiniBar la finestra di Spotify viene **sempre** ripristinata. Se un'esecuzione
-precedente è morta male con Spotify nascosto, il ripristino avviene all'avvio successivo.
+Chiudendo MiniBar la finestra del player viene **sempre** ripristinata. Se un'esecuzione
+precedente è morta male con la finestra nascosta, il ripristino avviene all'avvio
+successivo: il marker lasciato su disco dice anche di quale player si trattava.
 
 ## Note di implementazione
 
@@ -203,9 +215,14 @@ Verificati automaticamente: avvio e stili della finestra (topmost, noactivate, t
 layered), lettura SMTC con metadati e copertina, interpolazione della progress bar,
 click-through con isteresi (`WindowFromPoint` restituisce la finestra sottostante a riposo
 e la barretta in hover), drag con persistenza della posizione, modalità docked con 45 px di
-spazio riservato e rilascio pulito allo shutdown, ripristino di Spotify all'uscita, volume
-per-applicazione di Spotify mosso dalla rotellina (verificato leggendo la sessione dal
-mixer: una sola sessione, stato attivo, livello effettivamente cambiato).
+spazio riservato e rilascio pulito allo shutdown, ripristino del player all'uscita.
+
+Sul riconoscimento del player, verificato con due sorgenti SMTC attive insieme (Spotify e
+un finto player che non c'entra nulla con Spotify): entrambe elencate col nome giusto,
+finestra principale trovata per ciascuna, volume mosso e rimesso a posto sulla sessione
+del mixer corretta (100 % → 80 % → 100 % sul finto player, con Spotify che non si muove),
+minimize/hide e ripristino su un'app qualsiasi, recupero della finestra orfana dopo un
+crash simulato, e lettura di un INI in vecchio formato con la sola sezione `[spotify]`.
 
 Restano da provare a mano, perché richiedono uno scenario reale: la permanenza sopra un
 gioco in borderless dopo Alt-Tab ripetuti (M4) e l'impatto sul frametime con PresentMon.

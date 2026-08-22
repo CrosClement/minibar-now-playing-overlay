@@ -25,7 +25,7 @@ Preparazione tecnica, senza impatto sul prodotto.
 | 0.3 | `git init` + primo commit della sola sorgente | storia pulita, niente binari tracciati |
 | 0.4 | Login GitHub (`gh auth login`, config su disco E via `GH_CONFIG_DIR`) | `gh auth status` OK — **richiede intervento manuale dell'utente** |
 
-## Fase 1 — Generalizzazione multi-player
+## Fase 1 — Generalizzazione multi-player ✅
 
 Cambia il posizionamento: da "companion per Spotify" a "overlay universale per qualsiasi
 player". È il lavoro più sostanzioso e va fatto per primo perché ridefinisce nome delle
@@ -33,10 +33,21 @@ opzioni, README e descrizione del repo.
 
 | # | Attività | Note | Fatto quando |
 |---|---|---|---|
-| 1.1 | Volume per-app agnostico | `volume.cpp` cerca la sessione audio dal PID della sessione SMTC attiva, non più da "Spotify" | la rotellina muove il volume di YouTube Music / Tidal / foobar2000 |
-| 1.2 | Auto-minimize agnostico | `spotify.cpp` → `player.cpp`: minimizza/ripristina la finestra del player preferito, qualunque sia | con `preferred_app=` diverso da Spotify il comportamento è identico |
-| 1.3 | Selettore di sessione | voce nel menu contestuale che elenca le sessioni SMTC attive e permette di bloccarsi su una | con due player attivi si sceglie quale mostrare |
-| 1.4 | Sezione INI rinominata | `[spotify]` → `[player]` con retrocompatibilità in lettura | vecchi INI continuano a funzionare |
+| 1.1 ✅ | Volume per-app agnostico | `volume.cpp` cerca la sessione audio dal PID della sessione SMTC attiva, non più da "Spotify" | la rotellina muove il volume di YouTube Music / Tidal / foobar2000 |
+| 1.2 ✅ | Auto-minimize agnostico | `spotify.cpp` → `player.cpp`: minimizza/ripristina la finestra del player preferito, qualunque sia | con `preferred_app=` diverso da Spotify il comportamento è identico |
+| 1.3 ✅ | Selettore di sessione | voce nel menu contestuale che elenca le sessioni SMTC attive e permette di bloccarsi su una | con due player attivi si sceglie quale mostrare |
+| 1.4 ✅ | Sezione INI rinominata | `[spotify]` → `[player]` con retrocompatibilità in lettura | vecchi INI continuano a funzionare |
+
+L'identità del player è il `SourceAppUserModelId` della sessione SMTC: da lì si risale al
+processo (nome dell'eseguibile, o AUMID per le app impacchettate) e quindi sia alla sua
+sessione nel mixer sia alla sua finestra. Nessun nome di applicazione è più cablato nel
+codice, `preferred_app=` vuoto significa "segui la sessione di sistema".
+
+Verificato: volume mosso e rimesso a posto su un player finto che non è Spotify
+(`probe.exe`, 100 % → 80 % → 100 %), minimize/hide/restore e recupero dell'orfana su
+un'app qualsiasi, INI in vecchio formato letto senza modifiche (con `[player]` che vince
+su `[spotify]` se ci sono entrambe), e sul campo: MiniBar riconosce Spotify dalla sessione
+SMTC e lo minimizza leggendo un INI in vecchio formato. Private working set 5,3 MB.
 
 Fuori scope: integrazione con API web dei singoli servizi (like, playlist). Contraddice
 il minimalismo e richiede segreti/OAuth.

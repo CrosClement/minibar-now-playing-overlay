@@ -45,6 +45,19 @@ public:
     // Da chiamare sul thread UI alla ricezione di WM_APP_SESSION.
     void SelectSession();
 
+    // Identità della sessione scelta (SourceAppUserModelId, es. "Spotify.exe"):
+    // è la chiave con cui gli altri moduli riconoscono il processo del player.
+    // Vuota se non c'è nessuna sessione.
+    std::wstring CurrentAppId() const;
+
+    // Sessioni attive, senza duplicati, per il selettore nel menu contestuale.
+    // Da chiamare sul thread UI.
+    std::vector<std::wstring> ListSessions() const;
+
+    // Cambia l'app preferita (vuota = segui la sessione di sistema) e
+    // riseleziona subito la sessione.
+    void SetPreferred(std::wstring app);
+
     // Vero se il messaggio appartiene alla sessione corrente (scarta i
     // messaggi in volo di una sessione ormai sostituita).
     bool AcceptGeneration(uint32_t gen) const;

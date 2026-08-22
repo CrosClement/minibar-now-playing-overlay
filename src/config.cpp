@@ -44,6 +44,29 @@ void WriteInt(const std::wstring& file, const wchar_t* sec, const wchar_t* key, 
     WritePrivateProfileStringW(sec, key, std::to_wstring(v).c_str(), file.c_str());
 }
 
+// La sezione [spotify] si chiama [player] dalla 1.1: i file vecchi devono
+// continuare a funzionare, quindi in lettura si prova la nuova e si ripiega
+// sulla vecchia. In scrittura si usa sempre la nuova.
+constexpr wchar_t kPlayerSection[] = L"player";
+constexpr wchar_t kLegacySection[] = L"spotify";
+constexpr wchar_t kAbsent[]        = L"\x1";  // sentinella: chiave non presente
+
+std::wstring ReadPlayerStr(const std::wstring& file, const wchar_t* key, const wchar_t* def) {
+    std::wstring v = ReadStr(file, kPlayerSection, key, kAbsent);
+    if (v != kAbsent) return v;
+    v = ReadStr(file, kLegacySection, key, kAbsent);
+    return (v != kAbsent) ? v : std::wstring(def);
+}
+
+int ReadPlayerInt(const std::wstring& file, const wchar_t* key, int def) {
+    const std::wstring s = ReadPlayerStr(file, key, std::to_wstring(def).c_str());
+    try {
+        return std::stoi(s);
+    } catch (...) {
+        return def;
+    }
+}
+
 DockEdge ParseEdge(const std::wstring& s) {
     if (s == L"left") return DockEdge::Left;
     if (s == L"top") return DockEdge::Top;
@@ -100,9 +123,10 @@ void Config::Load() {
 
     taskbarAnchor = ParseAnchor(ReadStr(path_, L"taskbar", L"anchor", L"auto"));
 
-    autoMinimize    = ReadInt(path_, L"spotify", L"auto_minimize", 1) != 0;
-    hideInstead     = ReadInt(path_, L"spotify", L"hide_instead", 0) != 0;
-    launchIfMissing = ReadInt(path_, L"spotify", L"launch_if_missing", 0) != 0;
+    autoMinimize    = ReadPlayerInt(path_, L"auto_minimize", 1) != 0;
+    hideInstead     = ReadPlayerInt(path_, L"hide_instead", 0) != 0;
+    launchIfMissing = ReadPlayerInt(path_, L"launch_if_missing", 0) != 0;
+    launchPath      = ReadPlayerStr(path_, L"launch_path", L"");
 
     volumeStep = Clamp(ReadInt(path_, L"volume", L"wheel_step", 4), 1, 25);
 
@@ -130,9 +154,10 @@ void Config::WriteDefaultsIfMissing() {
     WritePrivateProfileStringW(L"overlay", L"idle_opacity", L"140", path_.c_str());
     WritePrivateProfileStringW(L"docked", L"edge", L"bottom", path_.c_str());
     WritePrivateProfileStringW(L"taskbar", L"anchor", L"auto", path_.c_str());
-    WritePrivateProfileStringW(L"spotify", L"auto_minimize", L"1", path_.c_str());
-    WritePrivateProfileStringW(L"spotify", L"hide_instead", L"0", path_.c_str());
-    WritePrivateProfileStringW(L"spotify", L"launch_if_missing", L"0", path_.c_str());
+    WritePrivateProfileStringW(kPlayerSection, L"auto_minimize", L"1", path_.c_str());
+    WritePrivateProfileStringW(kPlayerSection, L"hide_instead", L"0", path_.c_str());
+    WritePrivateProfileStringW(kPlayerSection, L"launch_if_missing", L"0", path_.c_str());
+    WritePrivateProfileStringW(kPlayerSection, L"launch_path", L"", path_.c_str());
     WritePrivateProfileStringW(L"volume", L"wheel_step", L"4", path_.c_str());
     WritePrivateProfileStringW(L"hotkey", L"enabled", L"0", path_.c_str());
     WritePrivateProfileStringW(L"hotkey", L"modifiers", L"alt+shift", path_.c_str());
@@ -178,5 +203,11 @@ void Config::SaveOverlayLayout(OverlayLayout l) {
 void Config::SaveAutoMinimize(bool v) {
     EnsurePath();
     autoMinimize = v;
-    WriteInt(path_, L"spotify", L"auto_minimize", v ? 1 : 0);
+    WriteInt(path_, kPlayerSection, L"auto_minimize", v ? 1 : 0);
+}
+
+void Config::SavePreferredApp(const std::wstring& app) {
+    EnsurePath();
+    preferredApp = app;
+    WritePrivateProfileStringW(L"general", L"preferred_app", app.c_str(), path_.c_str());
 }

@@ -1,5 +1,7 @@
 #include "window.h"
 
+#include "player.h"
+
 #include <shellapi.h>
 
 namespace {
@@ -136,16 +138,35 @@ UINT ShowContextMenu(HWND hwnd, POINT screenPt, const MenuState& state) {
                        state.layout == OverlayLayout::Tile ? IDM_LAYOUT_TILE : IDM_LAYOUT_BAR,
                        MF_BYCOMMAND);
 
+    // Selettore di player: con due sorgenti attive (Spotify e un video nel
+    // browser) è qui che si sceglie quale seguire.
+    HMENU players = CreatePopupMenu();
+    AppendMenuW(players, MF_STRING, IDM_SESSION_AUTO, L"Automatico");
+    if (!state.sessions.empty()) AppendMenuW(players, MF_SEPARATOR, 0, nullptr);
+
+    UINT id      = IDM_SESSION_FIRST;
+    UINT checked = IDM_SESSION_AUTO;
+    for (const auto& session : state.sessions) {
+        if (id > IDM_SESSION_LAST) break;
+        AppendMenuW(players, MF_STRING, id, PlayerManager::FriendlyName(session).c_str());
+        if (!state.preferred.empty() && ContainsNoCase(session, state.preferred)) checked = id;
+        ++id;
+    }
+    CheckMenuRadioItem(players, IDM_SESSION_AUTO, id - 1, checked, MF_BYCOMMAND);
+
+    const std::wstring who = state.playerName.empty() ? L"il player" : state.playerName;
+
     AppendMenuW(menu, MF_STRING, IDM_BAR_TOGGLE,
                 state.barVisible ? L"Nascondi barretta" : L"Mostra barretta");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(modes), L"Modalità");
     AppendMenuW(menu, MF_POPUP | (state.mode == BarMode::Overlay ? MF_ENABLED : MF_GRAYED),
                 reinterpret_cast<UINT_PTR>(looks), L"Aspetto");
+    AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(players), L"Player");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | (state.autoMinimize ? MF_CHECKED : MF_UNCHECKED),
-                IDM_AUTOMIN_TOGGLE, L"Minimizza Spotify");
-    AppendMenuW(menu, MF_STRING, IDM_SPOTIFY_RESTORE, L"Ripristina Spotify");
+                IDM_AUTOMIN_TOGGLE, (L"Minimizza " + who).c_str());
+    AppendMenuW(menu, MF_STRING, IDM_PLAYER_RESTORE, (L"Ripristina " + who).c_str());
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING, IDM_OPEN_INI, L"Apri minibar.ini");
     AppendMenuW(menu, MF_STRING, IDM_EXIT, L"Esci");

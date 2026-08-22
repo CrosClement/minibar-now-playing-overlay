@@ -1,6 +1,6 @@
 #include "volume.h"
 
-#include "spotify.h"
+#include "player.h"
 
 #include <mmdeviceapi.h>
 
@@ -12,9 +12,11 @@ float ClampUnit(float v) { return v < 0.f ? 0.f : (v > 1.f ? 1.f : v); }
 
 }  // namespace
 
-bool SpotifyVolume::Bind() {
+bool PlayerVolume::Bind(const std::wstring& appKey) {
     control_ = nullptr;
     volume_  = nullptr;
+    bound_.clear();
+    if (appKey.empty()) return false;
 
     com_ptr<IMMDeviceEnumerator> devices;
     if (FAILED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER,
@@ -44,7 +46,7 @@ bool SpotifyVolume::Bind() {
 
         DWORD pid = 0;
         if (FAILED(session2->GetProcessId(&pid)) || pid == 0) continue;
-        if (!SpotifyManager::IsSpotifyPid(pid)) continue;
+        if (!PlayerManager::ProcessMatches(pid, appKey)) continue;
 
         AudioSessionState state{};
         if (SUCCEEDED(session->GetState(&state)) && state == AudioSessionStateExpired) continue;
@@ -52,17 +54,18 @@ bool SpotifyVolume::Bind() {
         auto simple = session.try_as<ISimpleAudioVolume>();
         if (!simple) continue;
 
-        // Normalmente Spotify ne ha una sola (il processo utility audio di CEF),
-        // ma se ne comparissero altre quella che sta suonando è l'unica che
-        // conta: le inattive restano come ripiego.
+        // Un player basato su Chromium ne ha di norma una sola (il processo
+        // utility audio), ma se ne comparissero altre quella che sta suonando è
+        // l'unica che conta: le inattive restano come ripiego.
         control_ = session;
         volume_  = simple;
+        bound_   = appKey;
         if (state == AudioSessionStateActive) return true;
     }
     return volume_ != nullptr;
 }
 
-bool SpotifyVolume::Alive() {
+bool PlayerVolume::Alive() const {
     if (!control_ || !volume_) return false;
 
     AudioSessionState state{};
@@ -72,8 +75,13 @@ bool SpotifyVolume::Alive() {
     return SUCCEEDED(volume_->GetMasterVolume(&level));
 }
 
-float SpotifyVolume::Get() {
-    if (!Alive() && !Bind()) return -1.f;
+bool PlayerVolume::Ensure(const std::wstring& appKey) {
+    if (!appKey.empty() && bound_ == appKey && Alive()) return true;
+    return Bind(appKey);
+}
+
+float PlayerVolume::Get(const std::wstring& appKey) {
+    if (!Ensure(appKey)) return -1.f;
 
     float level = 0.f;
     if (FAILED(volume_->GetMasterVolume(&level))) return -1.f;
@@ -83,8 +91,8 @@ float SpotifyVolume::Get() {
     return ClampUnit(level);
 }
 
-float SpotifyVolume::Nudge(float delta) {
-    if (!Alive() && !Bind()) return -1.f;
+float PlayerVolume::Nudge(const std::wstring& appKey, float delta) {
+    if (!Ensure(appKey)) return -1.f;
 
     float level = 0.f;
     if (FAILED(volume_->GetMasterVolume(&level))) return -1.f;
@@ -100,8 +108,8 @@ float SpotifyVolume::Nudge(float delta) {
     return level;
 }
 
-float SpotifyVolume::ToggleMute() {
-    if (!Alive() && !Bind()) return -1.f;
+float PlayerVolume::ToggleMute(const std::wstring& appKey) {
+    if (!Ensure(appKey)) return -1.f;
 
     BOOL muted = FALSE;
     if (FAILED(volume_->GetMute(&muted))) return -1.f;
