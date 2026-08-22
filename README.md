@@ -35,6 +35,20 @@ public, out-of-process APIs — the same ones the Windows volume flyout uses. Th
 deliberate design constraint, because those are exactly the patterns that anti-cheat
 systems flag.
 
+**Why there is no comparison table here.** The obvious question is how this compares to
+the alternatives, and the honest answer is that we could not measure them under conditions
+we would be willing to publish. The closest projects are distributed in ways that do not
+fit a portable, no-install test: [ModernFlyouts](https://github.com/ModernFlyouts-Community/ModernFlyouts)
+(WinUI/.NET) ships only as an MSIX package, and its last release is 0.9.3 from April 2021;
+[lofi](https://github.com/dvx/lofi) (Electron) ships a Windows installer that writes
+uninstall entries to the registry, and needs a Spotify login before it displays anything;
+[Rainmeter](https://github.com/rainmeter/rainmeter) is a skin engine rather than a
+now-playing app, and the skins it bundles include no now-playing skin at all, so any
+measurement would really be measuring somebody's third-party skin. Rather than publish
+numbers we did not measure ourselves, we publish only ours — and the method to reproduce
+them: private working set and CPU sampled over 60 seconds with music playing and the mouse
+away from the bar, on Windows 11 25H2.
+
 ## Install
 
 1. Download `minibar.exe` from the [latest release](https://github.com/AceisX/minibar-now-playing-overlay/releases/latest).
@@ -161,10 +175,11 @@ being left behind and nothing is touched.
 
 ### It gets the player out of the way
 
-While MiniBar is running, the player's window is minimized (configurable), so a Chromium
-based player stops compositing frames and becomes what you actually wanted: an audio
-service. MiniBar cannot reduce another program's baseline memory — no external application
-can — but it can stop its rendering work.
+While MiniBar is running, the player's window is minimized (configurable), so it is not in
+the way: you keep the screen and you keep the controls. Whether that also saves resources
+depends on the player, and you should not count on it — we measured Spotify on Windows 11
+25H2, and with the window minimized its RAM does not change and its CPU does not go down.
+The number that holds is MiniBar's own cost, in the table above.
 
 The window is **always** restored when MiniBar exits. If a previous run died badly with the
 window hidden, the next start recovers it: the marker left on disk also records which player

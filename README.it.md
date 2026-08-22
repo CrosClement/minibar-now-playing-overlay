@@ -3,7 +3,8 @@
 *[Read this in English](README.md)*
 
 Mini player musicale nativo per Windows 11: una barretta overlay che legge le API media
-di sistema (SMTC), controlla la riproduzione e alleggerisce il player minimizzandolo.
+di sistema (SMTC), controlla la riproduzione e toglie di mezzo la finestra del player
+minimizzandola.
 
 > L'interfaccia dell'applicazione è in inglese: le voci di menu citate qui sotto sono
 > quelle che si vedono davvero, con la traduzione fra parentesi quando serve.
