@@ -29,8 +29,7 @@
     {
       "name": "ci",
       "displayName": "Release (Visual Studio, per i runner di GitHub)",
-      "description": "Non usa la toolchain portable di tools\\: CMake trova da solo Visual Studio, che sui runner windows-latest e' gia' installato. Serve solo alla CI.",
-      "generator": "Visual Studio 17 2022",
+      "description": "Non usa la toolchain portable di tools\\: senza generatore indicato CMake sceglie da solo il Visual Studio piu' recente presente sul runner, qualunque versione sia (l'immagine windows-latest cambia nel tempo). Serve solo alla CI.",
       "architecture": "x64",
       "binaryDir": "${sourceDir}/build/ci",
       "cacheVariables": {
