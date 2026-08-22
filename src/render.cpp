@@ -677,7 +677,7 @@ Renderer::TitleSlot Renderer::TitleFor(const RenderState& st, float w, float h) 
     // NB: 'small' è una macro del Windows SDK (rpcndr.h), non usarla come nome.
     const bool compact = st.layout.kind == LayoutKind::Taskbar;
     slot.format        = compact ? fmtTitleSm_.get() : fmtTitle_.get();
-    slot.text          = st.hasTrack ? st.title : std::wstring(L"Nessuna riproduzione");
+    slot.text          = st.hasTrack ? st.title : std::wstring(L"Nothing playing");
 
     const bool  twoLines = st.hasTrack && !st.artist.empty();
     const float mid      = (g.text.top + g.text.bottom) * 0.5f;

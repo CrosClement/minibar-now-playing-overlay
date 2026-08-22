@@ -129,16 +129,16 @@ UINT ShowContextMenu(HWND hwnd, POINT screenPt, const MenuState& state) {
 
     HMENU modes = CreatePopupMenu();
     AppendMenuW(modes, MF_STRING, IDM_MODE_OVERLAY, L"Overlay");
-    AppendMenuW(modes, MF_STRING, IDM_MODE_DOCKED, L"Agganciata al bordo");
-    AppendMenuW(modes, MF_STRING, IDM_MODE_TASKBAR, L"Dentro la taskbar");
+    AppendMenuW(modes, MF_STRING, IDM_MODE_DOCKED, L"Docked to an edge");
+    AppendMenuW(modes, MF_STRING, IDM_MODE_TASKBAR, L"In the taskbar");
     const UINT modeId = state.mode == BarMode::Docked    ? IDM_MODE_DOCKED
                         : state.mode == BarMode::Taskbar ? IDM_MODE_TASKBAR
                                                          : IDM_MODE_OVERLAY;
     CheckMenuRadioItem(modes, IDM_MODE_OVERLAY, IDM_MODE_TASKBAR, modeId, MF_BYCOMMAND);
 
     HMENU looks = CreatePopupMenu();
-    AppendMenuW(looks, MF_STRING, IDM_LAYOUT_BAR, L"Barretta");
-    AppendMenuW(looks, MF_STRING, IDM_LAYOUT_TILE, L"Riquadro");
+    AppendMenuW(looks, MF_STRING, IDM_LAYOUT_BAR, L"Bar");
+    AppendMenuW(looks, MF_STRING, IDM_LAYOUT_TILE, L"Tile");
     CheckMenuRadioItem(looks, IDM_LAYOUT_BAR, IDM_LAYOUT_TILE,
                        state.layout == OverlayLayout::Tile ? IDM_LAYOUT_TILE : IDM_LAYOUT_BAR,
                        MF_BYCOMMAND);
@@ -146,7 +146,7 @@ UINT ShowContextMenu(HWND hwnd, POINT screenPt, const MenuState& state) {
     // Selettore di player: con due sorgenti attive (Spotify e un video nel
     // browser) è qui che si sceglie quale seguire.
     HMENU players = CreatePopupMenu();
-    AppendMenuW(players, MF_STRING, IDM_SESSION_AUTO, L"Automatico");
+    AppendMenuW(players, MF_STRING, IDM_SESSION_AUTO, L"Automatic");
     if (!state.sessions.empty()) AppendMenuW(players, MF_SEPARATOR, 0, nullptr);
 
     UINT id      = IDM_SESSION_FIRST;
@@ -159,22 +159,21 @@ UINT ShowContextMenu(HWND hwnd, POINT screenPt, const MenuState& state) {
     }
     CheckMenuRadioItem(players, IDM_SESSION_AUTO, id - 1, checked, MF_BYCOMMAND);
 
-    const std::wstring who = state.playerName.empty() ? L"il player" : state.playerName;
+    const std::wstring who = state.playerName.empty() ? L"the player" : state.playerName;
 
-    AppendMenuW(menu, MF_STRING, IDM_BAR_TOGGLE,
-                state.barVisible ? L"Nascondi barretta" : L"Mostra barretta");
+    AppendMenuW(menu, MF_STRING, IDM_BAR_TOGGLE, state.barVisible ? L"Hide bar" : L"Show bar");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(modes), L"Modalità");
+    AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(modes), L"Mode");
     AppendMenuW(menu, MF_POPUP | (state.mode == BarMode::Overlay ? MF_ENABLED : MF_GRAYED),
-                reinterpret_cast<UINT_PTR>(looks), L"Aspetto");
+                reinterpret_cast<UINT_PTR>(looks), L"Look");
     AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(players), L"Player");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | (state.autoMinimize ? MF_CHECKED : MF_UNCHECKED),
-                IDM_AUTOMIN_TOGGLE, (L"Minimizza " + who).c_str());
-    AppendMenuW(menu, MF_STRING, IDM_PLAYER_RESTORE, (L"Ripristina " + who).c_str());
+                IDM_AUTOMIN_TOGGLE, (L"Minimize " + who).c_str());
+    AppendMenuW(menu, MF_STRING, IDM_PLAYER_RESTORE, (L"Restore " + who).c_str());
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
-    AppendMenuW(menu, MF_STRING, IDM_OPEN_INI, L"Apri minibar.ini");
-    AppendMenuW(menu, MF_STRING, IDM_EXIT, L"Esci");
+    AppendMenuW(menu, MF_STRING, IDM_OPEN_INI, L"Open minibar.ini");
+    AppendMenuW(menu, MF_STRING, IDM_EXIT, L"Exit");
 
     // La finestra è WS_EX_NOACTIVATE: senza questo il menu non si chiude
     // cliccando fuori.
