@@ -21,7 +21,7 @@ jobs:
       contents: write # serve solo allo step finale, che allega l'exe alla release
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configure
         run: cmake --preset ci
@@ -41,7 +41,7 @@ jobs:
           if ($kb -gt 2048) { throw "eseguibile oltre il budget di 2 MB: $kb KB" }
 
       - name: Upload the build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: minibar
           path: dist/minibar.exe
