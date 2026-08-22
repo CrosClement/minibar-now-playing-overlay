@@ -1,0 +1,34 @@
+{
+    "version": "1.0.0",
+    "description": "The lightest music overlay for Windows 11: shows what is playing and controls it, in about 6 MB of RAM, with no hooks and no injected DLLs.",
+    "homepage": "https://github.com/AceisX/minibar-now-playing-overlay",
+    "license": "MIT",
+    "architecture": {
+        "64bit": {
+            "url": "https://github.com/AceisX/minibar-now-playing-overlay/releases/download/v1.0.0/minibar.exe",
+            "hash": "a16b701e93acb136567549bbea23be9520e817372bf1fb3d8a42ff3f09fd1735"
+        }
+    },
+    "bin": "minibar.exe",
+    "shortcuts": [
+        [
+            "minibar.exe",
+            "MiniBar"
+        ]
+    ],
+    "persist": "minibar.ini",
+    "notes": [
+        "Settings live in minibar.ini next to the executable; Scoop keeps that file across updates.",
+        "MiniBar has no installer and no background service: close it from the tray icon or the right-click menu."
+    ],
+    "checkver": {
+        "github": "https://github.com/AceisX/minibar-now-playing-overlay"
+    },
+    "autoupdate": {
+        "architecture": {
+            "64bit": {
+                "url": "https://github.com/AceisX/minibar-now-playing-overlay/releases/download/v$version/minibar.exe"
+            }
+        }
+    }
+}
