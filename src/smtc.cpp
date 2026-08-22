@@ -258,6 +258,21 @@ void SmtcService::SetPreferred(std::wstring app) {
     if (d_->alive && d_->mgr) SelectSession();
 }
 
+void SmtcService::PauseApp(const std::wstring& appId) {
+    if (appId.empty() || !d_->alive || !d_->mgr) return;
+    try {
+        // Un'app può avere più sessioni (due schede del browser): si fermano tutte.
+        for (auto&& s : d_->mgr.GetSessions()) {
+            const std::wstring id{s.SourceAppUserModelId()};
+            if (CompareStringOrdinal(id.c_str(), -1, appId.c_str(), -1, TRUE) != CSTR_EQUAL)
+                continue;
+            if (s.GetPlaybackInfo().PlaybackStatus() != PlaybackState::Playing) continue;
+            s.TryPauseAsync();
+        }
+    } catch (...) {
+    }
+}
+
 void SmtcService::PullAll() {
     if (!d_->alive || !d_->session) return;
     const uint32_t gen = d_->gen.load();

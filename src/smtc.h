@@ -58,6 +58,12 @@ public:
     // riseleziona subito la sessione.
     void SetPreferred(std::wstring app);
 
+    // Mette in pausa tutte le sessioni di un'app (per SourceAppUserModelId,
+    // senza distinzione di maiuscole), qualunque sia quella seguita: serve
+    // quando si cambia player dal menu, perché quello lasciato non continui a
+    // suonare sotto il nuovo. Da chiamare sul thread UI.
+    void PauseApp(const std::wstring& appId);
+
     // Vero se il messaggio appartiene alla sessione corrente (scarta i
     // messaggi in volo di una sessione ormai sostituita).
     bool AcceptGeneration(uint32_t gen) const;
