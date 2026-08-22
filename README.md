@@ -96,9 +96,14 @@ on hover:
 <img src="docs/media/overlay-tile.png" width="144" alt="Tile at rest"> <img src="docs/media/overlay-tile-hover.png" width="144" alt="Tile with controls">
 
 **Docked** — a strip along a screen edge, with space reserved: maximized windows stop above
-it instead of hiding it.
+it instead of hiding it. Any of the four edges, from **Edge** in the menu.
 
 <img src="docs/media/docked.png" width="952" alt="Docked to an edge">
+
+On the left and right edges the strip is narrow and tall, so it uses a column layout
+instead: cover, progress, and the three controls stacked, centred vertically. There is no
+text there — 56 DIP is not enough for a title, and rotating it would be worse than leaving
+it out.
 
 **In the taskbar** — a pill in the empty space. It follows the taskbar's height, edge, DPI
 and theme, widens on hover to show title and artist, and disappears together with the
@@ -120,6 +125,7 @@ Switch mode and look from the right-click menu, or from the tray icon.
 | **Mute the player** | **middle-click the bar** |
 | Resize | **Ctrl** + wheel over the bar (overlay only), or `bar_width` / `tile_size` in the INI |
 | Change mode or look | right-click → Mode / Look |
+| Move the docked strip to another edge | right-click → Edge (Bottom / Top / Left / Right) |
 | Choose which player to follow | right-click → Player; the one you leave pauses, the one you pick starts |
 | Light or dark | right-click → Theme (Follow Windows / Dark / Light) |
 | Dim it more or less at rest | right-click → Idle opacity (overlay only) |

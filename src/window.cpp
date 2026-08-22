@@ -159,6 +159,18 @@ UINT ShowContextMenu(HWND hwnd, POINT screenPt, const MenuState& state) {
     }
     CheckMenuRadioItem(players, IDM_SESSION_AUTO, id - 1, checked, MF_BYCOMMAND);
 
+    HMENU edges = CreatePopupMenu();
+    AppendMenuW(edges, MF_STRING, IDM_EDGE_BOTTOM, L"Bottom");
+    AppendMenuW(edges, MF_STRING, IDM_EDGE_TOP, L"Top");
+    AppendMenuW(edges, MF_STRING, IDM_EDGE_LEFT, L"Left");
+    AppendMenuW(edges, MF_STRING, IDM_EDGE_RIGHT, L"Right");
+    CheckMenuRadioItem(edges, IDM_EDGE_BOTTOM, IDM_EDGE_RIGHT,
+                       state.edge == DockEdge::Top     ? IDM_EDGE_TOP
+                       : state.edge == DockEdge::Left  ? IDM_EDGE_LEFT
+                       : state.edge == DockEdge::Right ? IDM_EDGE_RIGHT
+                                                       : IDM_EDGE_BOTTOM,
+                       MF_BYCOMMAND);
+
     HMENU themes = CreatePopupMenu();
     AppendMenuW(themes, MF_STRING, IDM_THEME_AUTO, L"Follow Windows");
     AppendMenuW(themes, MF_STRING, IDM_THEME_DARK, L"Dark");
@@ -198,6 +210,8 @@ UINT ShowContextMenu(HWND hwnd, POINT screenPt, const MenuState& state) {
     AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(modes), L"Mode");
     AppendMenuW(menu, MF_POPUP | (overlay ? MF_ENABLED : MF_GRAYED),
                 reinterpret_cast<UINT_PTR>(looks), L"Look");
+    AppendMenuW(menu, MF_POPUP | (state.mode == BarMode::Docked ? MF_ENABLED : MF_GRAYED),
+                reinterpret_cast<UINT_PTR>(edges), L"Edge");
     AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(players), L"Player");
     AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(themes), L"Theme");
     AppendMenuW(menu, MF_POPUP | (overlay ? MF_ENABLED : MF_GRAYED),

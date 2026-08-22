@@ -59,6 +59,7 @@ struct Config {
     void SaveIdleOpacity(int value);
     void SaveMode(BarMode m);
     void SaveOverlayLayout(OverlayLayout l);
+    void SaveDockEdge(DockEdge e);
     void SaveAutoMinimize(bool v);
 
     const std::wstring& Path() const { return path_; }

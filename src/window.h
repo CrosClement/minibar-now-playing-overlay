@@ -54,7 +54,8 @@ struct MenuState {
     std::wstring              playerName;
 
     // Impostazioni raggiungibili dal menu, così l'INI resta per i dettagli.
-    Theme theme         = Theme::Auto;
+    DockEdge edge       = DockEdge::Bottom;
+    Theme    theme      = Theme::Auto;
     bool  pauseOnSwitch = true;
     bool  playOnSwitch  = true;
     bool  autostart     = false;

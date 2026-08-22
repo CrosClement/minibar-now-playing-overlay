@@ -217,6 +217,16 @@ void Config::SaveOverlayLayout(OverlayLayout l) {
                                path_.c_str());
 }
 
+void Config::SaveDockEdge(DockEdge e) {
+    EnsurePath();
+    edge = e;
+    const wchar_t* name = (e == DockEdge::Top)    ? L"top"
+                          : (e == DockEdge::Left)  ? L"left"
+                          : (e == DockEdge::Right) ? L"right"
+                                                   : L"bottom";
+    WritePrivateProfileStringW(L"docked", L"edge", name, path_.c_str());
+}
+
 void Config::SaveAutoMinimize(bool v) {
     EnsurePath();
     autoMinimize = v;

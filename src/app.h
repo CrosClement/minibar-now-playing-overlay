@@ -26,6 +26,11 @@ private:
     void DestroyBar();
     void ApplyMode(BarMode mode);
     void ApplyOverlayLayout(OverlayLayout layout);
+    void ApplyDockEdge(DockEdge edge);
+
+    // Riserva la striscia sul bordo scelto. Lo spessore è l'altezza sui bordi
+    // orizzontali e la larghezza su quelli laterali, dove il layout è un altro.
+    void RepositionDock();
     void ResizeToLayout();
     void PositionOverlay();
     void PositionTaskbar();

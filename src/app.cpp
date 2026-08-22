@@ -115,7 +115,7 @@ bool App::CreateBar() {
     switch (cfg_.mode) {
         case BarMode::Docked:
             appbar_.Register(hwnd_, true);
-            appbar_.Reposition(cfg_.edge, Renderer::Measure(BuildLayout(), dpi_).cy);
+            RepositionDock();
             win::SetClickThrough(hwnd_, false);
             opacity_ = targetOpacity_ = 1.0f;
             break;
@@ -190,6 +190,24 @@ void App::ApplyMode(BarMode mode) {
         return;
     }
     smtc_.Rebind(hwnd_);
+}
+
+void App::RepositionDock() {
+    if (cfg_.mode != BarMode::Docked) return;
+
+    const SIZE size = Renderer::Measure(BuildLayout(), dpi_);
+    const bool side = cfg_.edge == DockEdge::Left || cfg_.edge == DockEdge::Right;
+    appbar_.Reposition(cfg_.edge, side ? size.cx : size.cy);
+}
+
+void App::ApplyDockEdge(DockEdge edge) {
+    if (cfg_.mode != BarMode::Docked || cfg_.edge == edge) return;
+    cfg_.SaveDockEdge(edge);
+
+    // Passare fra un bordo orizzontale e uno laterale cambia anche il layout:
+    // Reposition ridimensiona la finestra e il WM_SIZE fa il resto.
+    RepositionDock();
+    Redraw();
 }
 
 void App::ApplyOverlayLayout(OverlayLayout layout) {
@@ -285,8 +303,14 @@ LayoutSpec App::BuildLayout() const {
     LayoutSpec spec;
     switch (cfg_.mode) {
         case BarMode::Docked:
-            spec.kind     = LayoutKind::Docked;
-            spec.widthDip = dockedWidthDip_;
+            // Sui bordi laterali la striscia è stretta e alta: il layout
+            // orizzontale non ci sta, e ne serve uno in colonna.
+            if (cfg_.edge == DockEdge::Left || cfg_.edge == DockEdge::Right) {
+                spec.kind = LayoutKind::DockedSide;
+            } else {
+                spec.kind     = LayoutKind::Docked;
+                spec.widthDip = dockedWidthDip_;
+            }
             break;
         case BarMode::Taskbar:
             spec.kind      = LayoutKind::Taskbar;
@@ -584,6 +608,7 @@ void App::ShowMenu(POINT screenPt) {
     ms.sessions      = smtc_.ListSessions();
     ms.preferred     = cfg_.preferredApp;
     ms.playerName    = PlayerManager::FriendlyName(PlayerKey());
+    ms.edge          = cfg_.edge;
     ms.theme         = cfg_.theme;
     ms.pauseOnSwitch = cfg_.pauseOnSwitch;
     ms.playOnSwitch  = cfg_.playOnSwitch;
@@ -625,6 +650,11 @@ void App::OnCommand(UINT id) {
 
         case IDM_LAYOUT_BAR: ApplyOverlayLayout(OverlayLayout::Bar); break;
         case IDM_LAYOUT_TILE: ApplyOverlayLayout(OverlayLayout::Tile); break;
+
+        case IDM_EDGE_BOTTOM: ApplyDockEdge(DockEdge::Bottom); break;
+        case IDM_EDGE_TOP: ApplyDockEdge(DockEdge::Top); break;
+        case IDM_EDGE_LEFT: ApplyDockEdge(DockEdge::Left); break;
+        case IDM_EDGE_RIGHT: ApplyDockEdge(DockEdge::Right); break;
 
         case IDM_AUTOMIN_TOGGLE:
             cfg_.SaveAutoMinimize(!cfg_.autoMinimize);
@@ -928,7 +958,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_DPICHANGED: {
             dpi_ = HIWORD(wParam);
             if (cfg_.mode == BarMode::Docked) {
-                appbar_.Reposition(cfg_.edge, Renderer::Measure(BuildLayout(), dpi_).cy);
+                RepositionDock();
             } else if (cfg_.mode == BarMode::Taskbar) {
                 PositionTaskbar();
             } else {
@@ -953,7 +983,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
             // riposizionarsi (taskbar spostata, auto-hide).
             RefreshTheme();
             if (cfg_.mode == BarMode::Docked)
-                appbar_.Reposition(cfg_.edge, Renderer::Measure(BuildLayout(), dpi_).cy);
+                RepositionDock();
             else if (cfg_.mode == BarMode::Taskbar)
                 PositionTaskbar();
             Redraw();  // il tema riguarda tutte le modalità, overlay compreso
@@ -961,7 +991,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
 
         case WM_DISPLAYCHANGE:
             if (cfg_.mode == BarMode::Docked)
-                appbar_.Reposition(cfg_.edge, Renderer::Measure(BuildLayout(), dpi_).cy);
+                RepositionDock();
             else if (cfg_.mode == BarMode::Taskbar)
                 PositionTaskbar();
             else if (!dragging_)

@@ -131,6 +131,11 @@ sbiadire: con un'opacità a riposo molto bassa, altrimenti, si fa fatica a trova
 
 <img src="docs/media/overlay-bar.png" width="318" alt="Overlay, aspetto barretta">
 
+La striscia agganciata sta su uno qualunque dei quattro bordi (**Edge** nel menu). Sui bordi
+sinistro e destro è stretta e alta, quindi usa un layout in colonna: copertina, progress e i
+tre comandi incolonnati, centrati in verticale. Lì non c'è testo — in 56 DIP un titolo non
+ci sta, e ruotarlo sarebbe peggio che ometterlo.
+
 In modalità taskbar la pillola mostra a riposo solo copertina, comandi e progress;
 passandoci sopra si allarga e compaiono titolo e artista. Segue altezza, bordo, DPI e
 tema della taskbar, e sparisce insieme a lei quando si nasconde o quando parte un'app a
@@ -151,6 +156,7 @@ nella tray.
 | **Mute del player** | **click col tasto centrale sulla barretta** |
 | Cambiare larghezza | **Ctrl** + rotellina sopra la barretta (solo in overlay), oppure `bar_width` / `tile_size` nell'INI |
 | Cambiare modalità o aspetto | tasto destro → **Mode** (modalità) / **Look** (aspetto) |
+| Spostare la striscia agganciata su un altro bordo | tasto destro → **Edge**: Bottom, Top, Left, Right |
 | Scegliere quale player seguire | tasto destro → **Player** (elenca le sessioni attive, più **Automatic**); quello che si lascia va in pausa, quello che si sceglie parte |
 | Chiaro o scuro | tasto destro → **Theme**: **Follow Windows**, **Dark**, **Light** |
 | Quanto sbiadire a riposo | tasto destro → **Idle opacity** (solo in overlay) |

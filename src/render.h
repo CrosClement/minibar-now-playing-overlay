@@ -15,10 +15,11 @@
 #include <winrt/base.h>
 
 enum class LayoutKind {
-    Bar,      // barretta orizzontale: copertina, testo, progress, controlli in hover
-    Docked,   // striscia a tutta larghezza con contenuto centrato
-    Tile,     // quadrato: solo copertina, controlli in hover sopra una velatura
-    Taskbar,  // pillola dentro la taskbar: copertina + controlli, testo in hover
+    Bar,         // barretta orizzontale: copertina, testo, progress, controlli in hover
+    Docked,      // striscia a tutta larghezza con contenuto centrato
+    DockedSide,  // striscia verticale sui bordi laterali: copertina e comandi in colonna
+    Tile,        // quadrato: solo copertina, controlli in hover sopra una velatura
+    Taskbar,     // pillola dentro la taskbar: copertina + controlli, testo in hover
 };
 
 struct LayoutSpec {

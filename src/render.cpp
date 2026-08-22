@@ -25,6 +25,14 @@ constexpr float kDockedMaxW = 392.f;
 constexpr float kBarMinW    = 168.f;
 constexpr float kBarMaxW    = 840.f;
 
+// Docked sui bordi laterali: striscia stretta e alta quanto lo schermo. Il
+// testo non c'è: in 56 DIP non ci sta, e ruotarlo sarebbe peggio che ometterlo.
+constexpr float kSideWidth  = 56.f;
+constexpr float kSideArt    = 44.f;
+constexpr float kSideButton = 26.f;
+constexpr float kSideGap    = 7.f;   // copertina → progress
+constexpr float kSideGap2   = 12.f;  // progress → comandi
+
 // Tile
 constexpr float kTileMin    = 68.f;
 constexpr float kTileMax    = 224.f;
@@ -88,6 +96,33 @@ Geometry ComputeGeometry(const RenderState& st, float w, float h) {
 
             g.showText    = true;
             g.showButtons = docked || st.hovered;
+            break;
+        }
+
+        case LayoutKind::DockedSide: {
+            // Il gruppo sta al centro verticale della striscia: appiccicarlo in
+            // alto lascerebbe un metro di vuoto sotto.
+            g.box       = D2D1::RectF(0, 0, w, h);
+            g.corner    = 0.f;
+            g.artCorner = 5.f;
+
+            const float pad     = (w - kSideArt) * 0.5f;
+            const float buttons = kSideButton * 3.f;
+            const float group   = kSideArt + kSideGap + kProgressH + kSideGap2 + buttons;
+            const float top     = (h - group) * 0.5f;
+
+            g.art      = D2D1::RectF(pad, top, pad + kSideArt, top + kSideArt);
+            g.progress = D2D1::RectF(pad, top + kSideArt + kSideGap, pad + kSideArt,
+                                     top + kSideArt + kSideGap + kProgressH);
+
+            const float btnTop  = g.progress.bottom + kSideGap2;
+            const float btnLeft = (w - kSideButton) * 0.5f;
+            for (int i = 0; i < 3; ++i)
+                g.buttons[i] = D2D1::RectF(btnLeft, btnTop + i * kSideButton, btnLeft + kSideButton,
+                                           btnTop + (i + 1) * kSideButton);
+
+            g.showText    = false;
+            g.showButtons = true;
             break;
         }
 
@@ -233,7 +268,9 @@ Palette PaletteFor(const RenderState& st, const D2D1_COLOR_F* accent) {
 
     // Overlay e docked disegnano il proprio fondo, e lo disegnano del colore che
     // il sistema dice alle applicazioni di usare.
-    const float bgAlpha = (st.layout.kind == LayoutKind::Docked) ? 0.98f : 0.90f;
+    const bool  strip   = st.layout.kind == LayoutKind::Docked ||
+                        st.layout.kind == LayoutKind::DockedSide;
+    const float bgAlpha = strip ? 0.98f : 0.90f;
 
     if (st.lightTheme) {
         p.bg        = {0.97f, 0.97f, 0.98f, bgAlpha};
@@ -314,6 +351,9 @@ SIZE Renderer::Measure(const LayoutSpec& spec, UINT dpi) {
             break;
         case LayoutKind::Docked:
             h = kBarHeight;
+            break;
+        case LayoutKind::DockedSide:
+            w = kSideWidth;  // lo spessore lo decide il layout, l'altezza lo schermo
             break;
         case LayoutKind::Tile:
             w = h = Clamp(spec.widthDip, kTileMin, kTileMax);
@@ -758,7 +798,9 @@ void Renderer::Draw(const RenderState& st) {
     rt_->Clear(D2D1::ColorF(0, 0.0f));
 
     // --- sfondo ---
-    if (st.layout.kind == LayoutKind::Docked) {
+    // Le strisce agganciate a un bordo non hanno angoli tondi: toccano il bordo
+    // dello schermo, e un angolo li' dentro sembrerebbe un errore.
+    if (st.layout.kind == LayoutKind::Docked || st.layout.kind == LayoutKind::DockedSide) {
         brush_->SetColor(pal.bg);
         rt_->FillRectangle(D2D1::RectF(0, 0, w, h), brush_.get());
     } else {
@@ -897,6 +939,7 @@ void Renderer::Draw(const RenderState& st) {
         const float glyphScale =
             (st.layout.kind == LayoutKind::Tile) ? 0.90f
             : (st.layout.kind == LayoutKind::Taskbar) ? 0.85f
+            : (st.layout.kind == LayoutKind::DockedSide) ? 0.85f
                                                       : 0.72f;
 
         auto triangle = [&](float x0, float y0, float x1, float y1, float x2, float y2) {
