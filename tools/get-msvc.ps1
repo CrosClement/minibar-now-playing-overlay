@@ -3,7 +3,7 @@
 # Output: tools\msvc\  (VC\Tools\MSVC\<ver>  +  Windows Kits\10)
 
 param(
-  [string]$Root = 'E:\CLAUDE\MINIBAR\tools',
+  [string]$Root = $PSScriptRoot,  # la cartella tools\ di questo repo, ovunque stia
   [string]$Host_ = 'x64',
   [string]$Target = 'x64'
 )

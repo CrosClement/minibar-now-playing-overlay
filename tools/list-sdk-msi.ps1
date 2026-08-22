@@ -1,5 +1,9 @@
 $ErrorActionPreference = 'Stop'
-$man = Get-Content -Raw 'E:\CLAUDE\MINIBAR\tools\_dl\VisualStudio.vsman' | ConvertFrom-Json -AsHashtable -Depth 100
+$manifest = Join-Path $PSScriptRoot '_dl\VisualStudio.vsman'
+if (-not (Test-Path $manifest)) {
+  throw "manca $manifest : lo scarica get-msvc.ps1, esegui prima quello"
+}
+$man = Get-Content -Raw $manifest | ConvertFrom-Json -AsHashtable -Depth 100
 $pkgs = @{}
 foreach ($p in $man['packages']) {
   $id = $p['id'].ToLowerInvariant()

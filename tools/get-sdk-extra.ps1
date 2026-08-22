@@ -3,7 +3,7 @@ param([Parameter(Mandatory)][string[]]$Msi)
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
-$Root = 'E:\CLAUDE\MINIBAR\tools'
+$Root = $PSScriptRoot  # la cartella tools\ di questo repo, ovunque stia
 $Dl = Join-Path $Root '_dl'
 $sdkDir = Join-Path $Dl 'sdk'
 $Dest = Join-Path $Root 'msvc'

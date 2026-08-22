@@ -2,7 +2,7 @@
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
 
-$out = 'E:\CLAUDE\MINIBAR\assets\minibar.ico'
+$out = Join-Path (Split-Path $PSScriptRoot) 'assets\minibar.ico'
 New-Item -ItemType Directory -Force (Split-Path $out) | Out-Null
 
 $sizes = @(16, 24, 32, 48, 64, 128, 256)
