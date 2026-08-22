@@ -189,6 +189,14 @@ riposo non cambia nulla.
 
 ### Cambiando player, quello che si lascia si ferma
 
+I browser compaiono col loro nome. Firefox e le web app registrano la sessione media sotto
+un identificatore opaco — Firefox usa un hash esadecimale del percorso d'installazione —
+che non somiglia a nessun nome di processo: nel menu si leggerebbe qualcosa come
+`F9EA399AADDF5B80`. MiniBar chiede alle finestre del desktop quale identificatore
+dichiarano, trova quella che corrisponde, e da lì prende il nome che l'eseguibile dà a sé
+stesso. È anche ciò che fa funzionare rotellina del volume e minimizzazione con un browser:
+senza, non c'è modo di sapere a quale processo appartenga quell'identificatore.
+
 Scegliendo un altro player dal menu, quello seguito fino a un attimo prima viene messo in
 pausa: senza, resterebbero a suonare in due sovrapposti. Il confronto è fra il player
 seguito prima e quello seguito dopo, non fra le voci di menu — se la scelta finisce sullo

@@ -131,6 +131,14 @@ Anything that registers a media session shows up under **Player** in the menu �
 video in a browser tab. Pick one and MiniBar follows it; pick **Automatic** and it follows
 whatever Windows considers current.
 
+Browsers appear under their real name. Firefox and web apps register their media session
+under an opaque identifier — Firefox uses a hexadecimal hash of its install path — which
+resembles no process name and would leave the menu showing something like `F9EA399AADDF5B80`.
+MiniBar asks the desktop's windows which identifier they declare, finds the one that
+matches, and takes the name the executable gives itself. That is also what makes the volume
+wheel and the minimize work for a browser: without it, there is no way to tell which process
+that identifier belongs to.
+
 When you switch, the player you are leaving is paused, otherwise you would have two of them
 playing over each other. The comparison is between the player followed before and the one
 followed after, not between menu entries: if the choice lands on the same player, nobody is

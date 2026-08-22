@@ -43,7 +43,7 @@ target_link_options(minibar PRIVATE
 # Tutto dal Windows SDK: nessuna dipendenza esterna.
 target_link_libraries(minibar PRIVATE
     d2d1 dwrite windowscodecs
-    windowsapp shlwapi shell32 user32 gdi32 ole32 dwmapi advapi32
+    windowsapp shlwapi shell32 user32 gdi32 ole32 dwmapi advapi32 version
 )
 
 # L'app è portable: l'eseguibile finisce accanto all'INI, sotto dist\.
