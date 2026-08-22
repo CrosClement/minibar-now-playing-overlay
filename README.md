@@ -120,7 +120,7 @@ Switch mode and look from the right-click menu, or from the tray icon.
 | **Mute the player** | **middle-click the bar** |
 | Resize | **Ctrl** + wheel over the bar (overlay only), or `bar_width` / `tile_size` in the INI |
 | Change mode or look | right-click → Mode / Look |
-| Choose which player to follow | right-click → Player; the one you leave is paused |
+| Choose which player to follow | right-click → Player; the one you leave pauses, the one you pick starts |
 | Light or dark | right-click → Theme (Follow Windows / Dark / Light) |
 | Dim it more or less at rest | right-click → Idle opacity (overlay only) |
 | Start with Windows | right-click → Start with Windows |
@@ -171,10 +171,17 @@ matches, and takes the name the executable gives itself. That is also what makes
 wheel and the minimize work for a browser: without it, there is no way to tell which process
 that identifier belongs to.
 
-When you switch, the player you are leaving is paused, otherwise you would have two of them
-playing over each other. The comparison is between the player followed before and the one
-followed after, not between menu entries: if the choice lands on the same player, nobody is
-being left behind and nothing is touched.
+When you switch, the player you are leaving is paused and the one you pick starts, so
+switching player means what you would expect it to mean: the music moves. The comparison is
+between the player followed before and the one followed after, not between menu entries: if
+the choice lands on the same player, nobody is being left behind and nothing is touched.
+
+Two details that keep this from being annoying. Pausing applies to every session of the app
+you leave — a browser can have several — while starting applies only to the one session
+MiniBar is now following, because starting three paused tabs at once would be worse than the
+problem it solves. And if the new player says it cannot start right now, MiniBar does not
+insist. Both halves can be turned off separately, from the menu or with `pause_on_switch`
+and `play_on_switch`.
 
 ### It gets the player out of the way
 
@@ -234,6 +241,7 @@ hide_instead=0        ; 1 = SW_HIDE instead of SW_MINIMIZE (more aggressive)
 launch_if_missing=0   ; start the player if it is not running
 launch_path=          ; executable to start; empty = guessed from the player's name
 pause_on_switch=1     ; pause the player you leave when you switch from the menu
+play_on_switch=1      ; and start the one you pick, if it was not already playing
 
 [volume]
 wheel_step=4          ; volume percentage points per wheel notch, 1-25

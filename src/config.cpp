@@ -139,6 +139,7 @@ void Config::Load() {
     hideInstead     = ReadPlayerInt(path_, L"hide_instead", 0) != 0;
     launchIfMissing = ReadPlayerInt(path_, L"launch_if_missing", 0) != 0;
     pauseOnSwitch   = ReadPlayerInt(path_, L"pause_on_switch", 1) != 0;
+    playOnSwitch    = ReadPlayerInt(path_, L"play_on_switch", 1) != 0;
     launchPath      = ReadPlayerStr(path_, L"launch_path", L"");
 
     volumeStep = Clamp(ReadInt(path_, L"volume", L"wheel_step", 4), 1, 25);
@@ -172,6 +173,7 @@ void Config::WriteDefaultsIfMissing() {
     WritePrivateProfileStringW(kPlayerSection, L"hide_instead", L"0", path_.c_str());
     WritePrivateProfileStringW(kPlayerSection, L"launch_if_missing", L"0", path_.c_str());
     WritePrivateProfileStringW(kPlayerSection, L"pause_on_switch", L"1", path_.c_str());
+    WritePrivateProfileStringW(kPlayerSection, L"play_on_switch", L"1", path_.c_str());
     WritePrivateProfileStringW(kPlayerSection, L"launch_path", L"", path_.c_str());
     WritePrivateProfileStringW(L"volume", L"wheel_step", L"4", path_.c_str());
     WritePrivateProfileStringW(L"hotkey", L"enabled", L"0", path_.c_str());
@@ -232,6 +234,12 @@ void Config::SavePauseOnSwitch(bool v) {
     EnsurePath();
     pauseOnSwitch = v;
     WriteInt(path_, kPlayerSection, L"pause_on_switch", v ? 1 : 0);
+}
+
+void Config::SavePlayOnSwitch(bool v) {
+    EnsurePath();
+    playOnSwitch = v;
+    WriteInt(path_, kPlayerSection, L"play_on_switch", v ? 1 : 0);
 }
 
 void Config::SaveIdleOpacity(int value) {

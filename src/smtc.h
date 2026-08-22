@@ -64,6 +64,12 @@ public:
     // suonare sotto il nuovo. Da chiamare sul thread UI.
     void PauseApp(const std::wstring& appId);
 
+    // Fa partire la sessione seguita adesso, se non sta già suonando. A
+    // differenza di PauseApp non tocca le altre sessioni della stessa app: un
+    // browser può averne più d'una in pausa, e farle partire tutte insieme
+    // sarebbe peggio del problema. Da chiamare sul thread UI.
+    void PlayCurrent();
+
     // Vero se il messaggio appartiene alla sessione corrente (scarta i
     // messaggi in volo di una sessione ormai sostituita).
     bool AcceptGeneration(uint32_t gen) const;

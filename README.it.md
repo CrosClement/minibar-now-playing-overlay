@@ -97,6 +97,7 @@ hide_instead=0        ; 1 = SW_HIDE invece di SW_MINIMIZE (più aggressivo)
 launch_if_missing=0   ; avvia il player se non è in esecuzione
 launch_path=          ; eseguibile da avviare; vuoto = percorsi tipici dedotti dal nome
 pause_on_switch=1     ; cambiando player dal menu, mette in pausa quello che si lascia
+play_on_switch=1      ; e fa partire quello che si sceglie, se non stava già suonando
 
 [volume]
 wheel_step=4          ; punti percentuali di volume per scatto di rotellina, 1-25
@@ -150,7 +151,7 @@ nella tray.
 | **Mute del player** | **click col tasto centrale sulla barretta** |
 | Cambiare larghezza | **Ctrl** + rotellina sopra la barretta (solo in overlay), oppure `bar_width` / `tile_size` nell'INI |
 | Cambiare modalità o aspetto | tasto destro → **Mode** (modalità) / **Look** (aspetto) |
-| Scegliere quale player seguire | tasto destro → **Player** (elenca le sessioni attive, più **Automatic**); quello che si lascia va in pausa |
+| Scegliere quale player seguire | tasto destro → **Player** (elenca le sessioni attive, più **Automatic**); quello che si lascia va in pausa, quello che si sceglie parte |
 | Chiaro o scuro | tasto destro → **Theme**: **Follow Windows**, **Dark**, **Light** |
 | Quanto sbiadire a riposo | tasto destro → **Idle opacity** (solo in overlay) |
 | Avviare con Windows | tasto destro → **Start with Windows** |
@@ -213,6 +214,13 @@ che non somiglia a nessun nome di processo: nel menu si leggerebbe qualcosa come
 dichiarano, trova quella che corrisponde, e da lì prende il nome che l'eseguibile dà a sé
 stesso. È anche ciò che fa funzionare rotellina del volume e minimizzazione con un browser:
 senza, non c'è modo di sapere a quale processo appartenga quell'identificatore.
+
+Quello che si sceglie, se era fermo, parte: cambiare player vuol dire quello che uno si
+aspetta, cioè che la musica si sposta. La pausa vale per tutte le sessioni dell'app che si
+lascia — un browser può averne diverse — mentre l'avvio vale solo per la sessione che
+MiniBar segue adesso, perché far ripartire tre schede insieme sarebbe peggio del problema
+che risolve. E se il player nuovo dice che non può partire in quel momento, non si insiste.
+Le due metà si spengono separatamente, dal menu o con `pause_on_switch` e `play_on_switch`.
 
 Scegliendo un altro player dal menu, quello seguito fino a un attimo prima viene messo in
 pausa: senza, resterebbero a suonare in due sovrapposti. Il confronto è fra il player

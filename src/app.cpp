@@ -543,9 +543,14 @@ void App::SelectPlayer(const std::wstring& appId) {
     // menu: se la scelta risolve sullo stesso player — "Automatico" con una
     // sola sessione attiva — non si sta lasciando nessuno e non si tocca
     // niente.
-    const std::wstring after = smtc_.CurrentAppId();
-    if (cfg_.pauseOnSwitch && !before.empty() && !EqualsNoCase(before, after))
-        smtc_.PauseApp(before);
+    const std::wstring after   = smtc_.CurrentAppId();
+    const bool         changed = !EqualsNoCase(before, after);
+
+    if (cfg_.pauseOnSwitch && !before.empty() && changed) smtc_.PauseApp(before);
+
+    // ...e quello che si sceglie parte, se era fermo. Dopo la pausa del
+    // vecchio, così non si accavallano.
+    if (cfg_.playOnSwitch && !after.empty() && changed) smtc_.PlayCurrent();
 
     playerApplied_ = false;
     ApplyPlayerPolicy();
@@ -581,6 +586,7 @@ void App::ShowMenu(POINT screenPt) {
     ms.playerName    = PlayerManager::FriendlyName(PlayerKey());
     ms.theme         = cfg_.theme;
     ms.pauseOnSwitch = cfg_.pauseOnSwitch;
+    ms.playOnSwitch  = cfg_.playOnSwitch;
     ms.idleOpacity   = cfg_.idleOpacity;
     ms.autostart     = startup::Enabled();
 
@@ -635,6 +641,7 @@ void App::OnCommand(UINT id) {
             break;
 
         case IDM_PAUSE_TOGGLE: cfg_.SavePauseOnSwitch(!cfg_.pauseOnSwitch); break;
+        case IDM_PLAY_TOGGLE: cfg_.SavePlayOnSwitch(!cfg_.playOnSwitch); break;
 
         case IDM_THEME_AUTO:
         case IDM_THEME_DARK:

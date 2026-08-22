@@ -33,6 +33,7 @@ struct Config {
     bool         hideInstead     = false;
     bool         launchIfMissing = false;
     bool         pauseOnSwitch   = true;  // il player che si lascia va in pausa
+    bool         playOnSwitch    = true;  // ...e quello che si sceglie parte
     std::wstring launchPath;              // vuoto = percorsi tipici dedotti dal nome
 
     // [volume]
@@ -54,6 +55,7 @@ struct Config {
     void SavePreferredApp(const std::wstring& app);
     void SaveTheme(Theme t);
     void SavePauseOnSwitch(bool v);
+    void SavePlayOnSwitch(bool v);
     void SaveIdleOpacity(int value);
     void SaveMode(BarMode m);
     void SaveOverlayLayout(OverlayLayout l);

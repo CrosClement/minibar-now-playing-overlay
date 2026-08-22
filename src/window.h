@@ -56,6 +56,7 @@ struct MenuState {
     // Impostazioni raggiungibili dal menu, così l'INI resta per i dettagli.
     Theme theme         = Theme::Auto;
     bool  pauseOnSwitch = true;
+    bool  playOnSwitch  = true;
     bool  autostart     = false;
     int   idleOpacity   = 140;
 };

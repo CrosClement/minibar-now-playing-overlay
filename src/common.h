@@ -39,6 +39,7 @@ enum : UINT {
     IDM_EXIT           = 1010,
     IDM_PAUSE_TOGGLE   = 1011,
     IDM_AUTOSTART      = 1012,
+    IDM_PLAY_TOGGLE    = 1013,
 
     IDM_THEME_AUTO  = 1020,
     IDM_THEME_DARK  = 1021,

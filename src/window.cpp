@@ -208,6 +208,8 @@ UINT ShowContextMenu(HWND hwnd, POINT screenPt, const MenuState& state) {
     AppendMenuW(menu, MF_STRING, IDM_PLAYER_RESTORE, (L"Restore " + who).c_str());
     AppendMenuW(menu, MF_STRING | (state.pauseOnSwitch ? MF_CHECKED : MF_UNCHECKED),
                 IDM_PAUSE_TOGGLE, L"Pause the player you leave");
+    AppendMenuW(menu, MF_STRING | (state.playOnSwitch ? MF_CHECKED : MF_UNCHECKED),
+                IDM_PLAY_TOGGLE, L"Play the player you pick");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | (state.autostart ? MF_CHECKED : MF_UNCHECKED), IDM_AUTOSTART,
                 L"Start with Windows");

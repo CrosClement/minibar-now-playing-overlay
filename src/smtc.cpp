@@ -273,6 +273,18 @@ void SmtcService::PauseApp(const std::wstring& appId) {
     }
 }
 
+void SmtcService::PlayCurrent() {
+    if (!d_->alive || !d_->session) return;
+    try {
+        auto info = d_->session.GetPlaybackInfo();
+        if (info.PlaybackStatus() == PlaybackState::Playing) return;
+        // Se il player dice che Play non è disponibile adesso, non si insiste.
+        if (!info.Controls().IsPlayEnabled()) return;
+        d_->session.TryPlayAsync();
+    } catch (...) {
+    }
+}
+
 void SmtcService::PullAll() {
     if (!d_->alive || !d_->session) return;
     const uint32_t gen = d_->gen.load();
