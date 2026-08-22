@@ -13,16 +13,19 @@ namespace {
 // in DIP, quindi la riduzione vale identica a ogni densità.
 constexpr float kProgressH = 2.5f;
 
-// Bar / Docked
-constexpr float kBarHeight  = 45.f;
-constexpr float kBarPad     = 6.f;
-constexpr float kBarArt     = 33.f;  // = kBarHeight - kBarPad * 2
-constexpr float kBarButton  = 21.f;
-constexpr float kBarCorner  = 7.f;
-constexpr float kBarProgY   = 36.5f;  // = kBarHeight - kBarPad - kProgressH
-constexpr float kBarGap     = 6.f;    // copertina/testo/controlli
-constexpr float kDockedMaxW = 392.f;
-constexpr float kBarMinW    = 168.f;
+// Bar / Docked. Dalla 1.1 la barretta è ~10% più alta e ha più aria attorno ai
+// contenuti: il margine dal bordo passa da 6 a 7 DIP e lo stacco fra copertina,
+// testo e comandi da 6 a 8. Spessore della progress, bordo e pesi del testo
+// restano quelli di prima: qui si cambia la misura, non lo stile.
+constexpr float kBarHeight  = 50.f;
+constexpr float kBarPad     = 7.f;
+constexpr float kBarArt     = 36.f;  // = kBarHeight - kBarPad * 2
+constexpr float kBarButton  = 23.f;
+constexpr float kBarCorner  = 8.f;
+constexpr float kBarProgY   = 40.5f;  // = kBarHeight - kBarPad - kProgressH
+constexpr float kBarGap     = 8.f;    // copertina/testo/controlli
+constexpr float kDockedMaxW = 420.f;
+constexpr float kBarMinW    = 185.f;
 constexpr float kBarMaxW    = 840.f;
 
 // Docked sui bordi laterali: striscia stretta e alta quanto lo schermo. Il
@@ -91,7 +94,7 @@ Geometry ComputeGeometry(const RenderState& st, float w, float h) {
             ThreeButtons(g, ctrlLeft, h * 0.5f, kBarButton);
 
             const float textLeft = x0 + kBarPad + kBarArt + kBarGap;
-            g.text = D2D1::RectF(textLeft, 3.f, ctrlLeft - kBarGap, kBarProgY - 2.f);
+            g.text = D2D1::RectF(textLeft, 4.f, ctrlLeft - kBarGap, kBarProgY - 3.f);
             g.progress = D2D1::RectF(textLeft, kBarProgY, x0 + cw - kBarPad, kBarProgY + kProgressH);
 
             g.showText    = true;
@@ -405,8 +408,9 @@ bool Renderer::Init(HWND hwnd, UINT dpi) {
         }
         return true;
     };
-    if (!makeFormat(10.0f, DWRITE_FONT_WEIGHT_SEMI_BOLD, fmtTitle_)) return false;
-    if (!makeFormat(8.5f, DWRITE_FONT_WEIGHT_NORMAL, fmtArtist_)) return false;
+    // Barretta e docked: cresciuti insieme all'altezza, stesso peso di prima.
+    if (!makeFormat(11.0f, DWRITE_FONT_WEIGHT_SEMI_BOLD, fmtTitle_)) return false;
+    if (!makeFormat(9.5f, DWRITE_FONT_WEIGHT_NORMAL, fmtArtist_)) return false;
     if (!makeFormat(11.0f, DWRITE_FONT_WEIGHT_SEMI_BOLD, fmtTitleSm_)) return false;
     if (!makeFormat(9.5f, DWRITE_FONT_WEIGHT_NORMAL, fmtArtistSm_)) return false;
 

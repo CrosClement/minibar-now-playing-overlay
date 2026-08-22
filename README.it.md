@@ -78,7 +78,7 @@ preferred_app=Spotify ; sottostringa del SourceAppUserModelId della sessione pre
 
 [overlay]
 layout=bar            ; bar (barretta orizzontale) | tile (riquadro con la copertina)
-bar_width=266         ; larghezza della barretta in DIP, 168-840
+bar_width=293         ; larghezza della barretta in DIP, 185-840
 tile_size=92          ; lato del riquadro in DIP, 68-224
 x=…  y=…              ; scritti al rilascio del drag
 idle_opacity=140      ; 0-255, opacità a riposo
@@ -123,7 +123,7 @@ Nel menu si chiamano **Overlay**, **Docked to an edge** (agganciata a un bordo) 
 | Controlli | all'hover | sempre | sempre |
 | Sopra i giochi | sì | no | sì, finché la taskbar è visibile |
 | Aspetti disponibili | barretta o riquadro | barretta | pillola compatta |
-| Ingombro predefinito | 266×45 o 92×92 DIP | 45 DIP di altezza | altezza della taskbar |
+| Ingombro predefinito | 293×50 o 92×92 DIP | 50 DIP di altezza, 56 di larghezza sui bordi laterali | altezza della taskbar |
 
 Ogni volta che compare — all'avvio, riaprendola dalla tray o dall'hotkey, o passando alla
 modalità overlay — la barretta si mostra a piena opacità per un paio di secondi prima di

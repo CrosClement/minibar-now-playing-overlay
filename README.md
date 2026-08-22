@@ -81,7 +81,7 @@ repository and will appear once it is merged.
 | Controls | on hover | always | always |
 | Over fullscreen-windowed games | yes | no | yes, while the taskbar is visible |
 | Looks available | bar or tile | bar | compact pill |
-| Default footprint | 266×45 or 92×92 DIP | 45 DIP tall | taskbar height |
+| Default footprint | 293×50 or 92×92 DIP | 50 DIP tall, 56 DIP wide on a side edge | taskbar height |
 
 **Overlay**, the bar look — drag it anywhere, click-through and dimmed until you hover it.
 Whenever it appears — at startup, when you bring it back from the tray or the hotkey, or
@@ -228,7 +228,7 @@ preferred_app=Spotify ; substring of the media session's SourceAppUserModelId;
 
 [overlay]
 layout=bar            ; bar (horizontal strip) | tile (square, cover only)
-bar_width=266         ; DIP, 168-840
+bar_width=293         ; DIP, 185-840
 tile_size=92          ; DIP, 68-224
 x=…  y=…              ; written when you drop the bar after a drag
 idle_opacity=140      ; 0-255, opacity at rest

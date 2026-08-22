@@ -125,7 +125,7 @@ void Config::Load() {
     overlayLayout = (ReadStr(path_, L"overlay", L"layout", L"bar") == L"tile")
                         ? OverlayLayout::Tile
                         : OverlayLayout::Bar;
-    barWidth      = Clamp(ReadInt(path_, L"overlay", L"bar_width", 266), 168, 840);
+    barWidth      = Clamp(ReadInt(path_, L"overlay", L"bar_width", 293), 185, 840);
     tileSize      = Clamp(ReadInt(path_, L"overlay", L"tile_size", 92), 68, 224);
     x             = ReadInt(path_, L"overlay", L"x", INT_MIN);
     y             = ReadInt(path_, L"overlay", L"y", INT_MIN);
@@ -164,7 +164,7 @@ void Config::WriteDefaultsIfMissing() {
     WritePrivateProfileStringW(L"general", L"preferred_app", L"Spotify", path_.c_str());
     WritePrivateProfileStringW(L"general", L"theme", L"auto", path_.c_str());
     WritePrivateProfileStringW(L"overlay", L"layout", L"bar", path_.c_str());
-    WritePrivateProfileStringW(L"overlay", L"bar_width", L"266", path_.c_str());
+    WritePrivateProfileStringW(L"overlay", L"bar_width", L"293", path_.c_str());
     WritePrivateProfileStringW(L"overlay", L"tile_size", L"92", path_.c_str());
     WritePrivateProfileStringW(L"overlay", L"idle_opacity", L"140", path_.c_str());
     WritePrivateProfileStringW(L"docked", L"edge", L"bottom", path_.c_str());
@@ -191,7 +191,7 @@ void Config::SaveOverlaySize(int dip) {
         tileSize = Clamp(dip, 68, 224);
         WriteInt(path_, L"overlay", L"tile_size", tileSize);
     } else {
-        barWidth = Clamp(dip, 168, 840);
+        barWidth = Clamp(dip, 185, 840);
         WriteInt(path_, L"overlay", L"bar_width", barWidth);
     }
 }

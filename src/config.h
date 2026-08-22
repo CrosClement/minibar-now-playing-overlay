@@ -16,7 +16,7 @@ struct Config {
 
     // [overlay]
     OverlayLayout overlayLayout = OverlayLayout::Bar;
-    int           barWidth      = 266;  // DIP
+    int           barWidth      = 293;  // DIP
     int           tileSize      = 92;   // DIP, lato del quadrato
     int           x             = INT_MIN;  // INT_MIN = posizione automatica
     int           y             = INT_MIN;
