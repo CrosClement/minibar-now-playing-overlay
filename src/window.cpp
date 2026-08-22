@@ -97,6 +97,11 @@ bool SystemUsesLightTheme() {
                      L"SystemUsesLightTheme", 0) != 0;
 }
 
+bool AppsUseLightTheme() {
+    return ReadDword(L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+                     L"AppsUseLightTheme", 0) != 0;
+}
+
 bool AddTrayIcon(HWND hwnd, HICON icon) {
     NOTIFYICONDATAW nid{sizeof(nid)};
     nid.hWnd             = hwnd;

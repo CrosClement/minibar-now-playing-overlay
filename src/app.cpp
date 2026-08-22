@@ -100,7 +100,7 @@ void App::Shutdown() {
 
 // ------------------------------------------------------------ ciclo di vita --
 bool App::CreateBar() {
-    lightUi_ = win::SystemUsesLightTheme();
+    RefreshTheme();
 
     const UINT dpiGuess = GetDpiForSystem() ? GetDpiForSystem() : 96;
     const SIZE guess    = Renderer::Measure(BuildLayout(), dpiGuess);
@@ -320,7 +320,8 @@ RenderState App::BuildState() const {
     st.canNext   = canNext_;
     st.canToggle = canToggle_;
     st.hasTrack  = hasTrack_;
-    st.lightUi   = lightUi_;
+    st.lightTaskbar = lightTaskbar_;
+    st.lightTheme   = lightTheme_;
     st.posSec    = ShownPosition();
     st.durSec    = durSec_;
     st.opacity   = opacity_;
@@ -430,6 +431,19 @@ void App::OnCursorTick() {
     } else if (hovered_ && !unhoverArmed_ && !dragging_ && !pressedArea_) {
         SetTimer(hwnd_, IDT_UNHOVER, 250, nullptr);  // isteresi: niente sfarfallio
         unhoverArmed_ = true;
+    }
+}
+
+void App::RefreshTheme() {
+    // Due valori distinti: la taskbar decide il contrasto della pillola che ci
+    // sta sopra, il tema delle applicazioni decide come la barretta disegna il
+    // proprio fondo. Su Windows 11 possono essere diversi.
+    lightTaskbar_ = win::SystemUsesLightTheme();
+
+    switch (cfg_.theme) {
+        case Theme::Dark: lightTheme_ = false; break;
+        case Theme::Light: lightTheme_ = true; break;
+        default: lightTheme_ = win::AppsUseLightTheme(); break;
     }
 }
 
@@ -854,15 +868,16 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
         }
 
         case WM_SETTINGCHANGE:
-            // Interessa a docked e taskbar (taskbar spostata, auto-hide, tema).
-            lightUi_ = win::SystemUsesLightTheme();
-            if (cfg_.mode == BarMode::Docked) {
+            // Windows manda questo messaggio anche quando si passa da chiaro a
+            // scuro (lParam "ImmersiveColorSet"): il tema si rilegge e basta,
+            // senza riavviare niente. Poi docked e taskbar hanno anche di che
+            // riposizionarsi (taskbar spostata, auto-hide).
+            RefreshTheme();
+            if (cfg_.mode == BarMode::Docked)
                 appbar_.Reposition(cfg_.edge, Renderer::Measure(BuildLayout(), dpi_).cy);
-                Redraw();
-            } else if (cfg_.mode == BarMode::Taskbar) {
+            else if (cfg_.mode == BarMode::Taskbar)
                 PositionTaskbar();
-                Redraw();
-            }
+            Redraw();  // il tema riguarda tutte le modalità, overlay compreso
             return 0;
 
         case WM_DISPLAYCHANGE:

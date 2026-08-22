@@ -29,8 +29,14 @@ struct TaskbarInfo {
 };
 TaskbarInfo QueryTaskbar();
 
-// Tema chiaro di sistema: in modalità taskbar serve la palette scura.
+// Tema chiaro della shell (taskbar e menu Start): in modalità taskbar è il
+// colore su cui la pillola va a finire, quindi decide il contrasto.
 bool SystemUsesLightTheme();
+
+// Tema chiaro delle applicazioni: è quello che una finestra come la nostra
+// deve seguire quando disegna il proprio fondo. Su Windows 11 i due valori
+// sono indipendenti — si può avere taskbar scura e app chiare.
+bool AppsUseLightTheme();
 
 bool AddTrayIcon(HWND hwnd, HICON icon);
 void RemoveTrayIcon(HWND hwnd);

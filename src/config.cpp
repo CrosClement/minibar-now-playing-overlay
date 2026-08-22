@@ -88,6 +88,12 @@ const wchar_t* ModeName(BarMode m) {
     }
 }
 
+Theme ParseTheme(const std::wstring& s) {
+    if (s == L"dark") return Theme::Dark;
+    if (s == L"light") return Theme::Light;
+    return Theme::Auto;
+}
+
 TaskbarAnchor ParseAnchor(const std::wstring& s) {
     if (s == L"left") return TaskbarAnchor::Left;
     if (s == L"center") return TaskbarAnchor::Center;
@@ -109,6 +115,7 @@ void Config::Load() {
 
     mode         = ParseMode(ReadStr(path_, L"general", L"mode", L"overlay"));
     preferredApp = ReadStr(path_, L"general", L"preferred_app", L"Spotify");
+    theme        = ParseTheme(ReadStr(path_, L"general", L"theme", L"auto"));
 
     overlayLayout = (ReadStr(path_, L"overlay", L"layout", L"bar") == L"tile")
                         ? OverlayLayout::Tile
@@ -148,6 +155,7 @@ void Config::WriteDefaultsIfMissing() {
 
     WritePrivateProfileStringW(L"general", L"mode", L"overlay", path_.c_str());
     WritePrivateProfileStringW(L"general", L"preferred_app", L"Spotify", path_.c_str());
+    WritePrivateProfileStringW(L"general", L"theme", L"auto", path_.c_str());
     WritePrivateProfileStringW(L"overlay", L"layout", L"bar", path_.c_str());
     WritePrivateProfileStringW(L"overlay", L"bar_width", L"266", path_.c_str());
     WritePrivateProfileStringW(L"overlay", L"tile_size", L"92", path_.c_str());

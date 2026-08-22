@@ -6,11 +6,13 @@ enum class BarMode { Overlay, Docked, Taskbar };
 enum class OverlayLayout { Bar, Tile };
 enum class DockEdge { Left, Top, Right, Bottom };
 enum class TaskbarAnchor { Auto, Left, Center, Right };
+enum class Theme { Auto, Dark, Light };
 
 struct Config {
     // [general]
     BarMode      mode         = BarMode::Overlay;
     std::wstring preferredApp = L"Spotify";
+    Theme        theme        = Theme::Auto;  // auto = quello che dice Windows
 
     // [overlay]
     OverlayLayout overlayLayout = OverlayLayout::Bar;

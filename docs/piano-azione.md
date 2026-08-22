@@ -62,7 +62,7 @@ software e con lo zero-redraw a riposo.
 | 2.1 ✅ | Colore dominante dalla copertina | media/quantizzazione sui pixel della bitmap SMTC a ogni cambio traccia; tinta su progress bar e/o sfondo | il colore segue l'album, costo solo al cambio traccia |
 | 2.2 ✅ | Marquee dei titoli lunghi | scorrimento con dissolvenza ai bordi, **solo in hover** | a riposo zero ridisegni, come oggi |
 | 2.3 ✅ | Transizioni brevi | fade della copertina al cambio traccia, easing sull'espansione della pillola taskbar | timer attivo solo durante la transizione (poche centinaia di ms) |
-| 2.4 | Tema chiaro/scuro dal sistema | lettura di `AppsUseLightTheme` + notifica `WM_SETTINGCHANGE` | la barretta segue il tema senza riavvio |
+| 2.4 ✅ | Tema chiaro/scuro dal sistema | lettura di `AppsUseLightTheme` + notifica `WM_SETTINGCHANGE` | la barretta segue il tema senza riavvio |
 
 Criterio trasversale: dopo ogni voce, rimisurare RAM/CPU a riposo e confermare che i
 numeri della §3 reggono.
@@ -108,6 +108,33 @@ giuste e il titolo che si scopre man mano.
 Misure dopo la voce (barra, musica in riproduzione, 60 s): private working set 6,29 MB,
 CPU a riposo 0,23 % di un core (0,015 % della macchina) — cioè come prima della voce, che
 è il punto: a transizione finita il timer non c'è più.
+
+**2.4** — Windows tiene due valori distinti: `SystemUsesLightTheme` è il colore della
+shell, quindi della taskbar sotto la pillola, e `AppsUseLightTheme` è quello che le
+applicazioni devono seguire quando disegnano sé stesse. Possono essere diversi, e la
+barretta li usa per due cose diverse: il primo decide il contrasto della pillola, il
+secondo il colore del fondo che la barretta si disegna da sola in overlay e docked. La
+tinta della copertina viene riportata su un intervallo di luminosità diverso a seconda del
+fondo, quindi funziona già in entrambi i temi. `WM_SETTINGCHANGE` rilegge e basta, senza
+ricreare niente: prima l'overlay non si ridisegnava su quel messaggio, ora sì. In più
+`[general] theme=auto|dark|light` per chi vuole forzarlo — sopra un gioco lo scuro è
+preferibile a prescindere da come è configurato il sistema.
+Verificato: barra e riquadro nei due temi (glifi bianchi sul velo scuro, neri su quello
+chiaro), e il cambio a caldo sull'app in esecuzione, cambiando `AppsUseLightTheme` e
+mandando `WM_SETTINGCHANGE` alla sola finestra di MiniBar — la barretta passa a chiaro e
+torna a scuro senza riavviare. Nota tecnica: `WM_SETTINGCHANGE` non si può *postare* fra
+processi (`PostMessage` fallisce con `ERROR_MESSAGE_SYNC_ONLY`), va mandato con
+`SendMessageTimeout`.
+Misure dopo la voce (barra, musica in riproduzione, 60 s dopo l'avvio): private working
+set 6,21 MB, CPU a riposo 0,078 % di un core (0,005 % della macchina).
+
+Nota sulla ripetibilità delle misure di CPU: dipendono da quanti cambi traccia cadono nella
+finestra di misura. Un cambio traccia costa il decode della copertina, il calcolo della
+tinta e 220 ms di dissolvenza; in una finestra da 60 s con due o tre cambi si arriva anche
+a 0,5 % di un core, in una senza cambi si sta sotto 0,1 %. Fra un evento e l'altro il
+processo consuma zero: campionando ogni 4 secondi si leggono 0,000 s di CPU per quasi tutti
+i campioni. Le misure qui sopra sono tutte prese 60 s dopo l'avvio, in layout barra, con la
+musica in riproduzione e senza hover.
 
 ## Fase 3 — Presentazione
 

@@ -45,6 +45,9 @@ private:
 
     // Cambia la copertina facendola comparire in dissolvenza su quella di prima.
     void SwapThumbnail(const std::vector<uint8_t>& bytes);
+
+    // Rilegge chiaro/scuro dal sistema (o dall'INI, se lo forza).
+    void RefreshTheme();
     void ShowMenu(POINT screenPt);
     void OnCommand(UINT id);
     void ToggleBarVisible();
@@ -118,7 +121,8 @@ private:
     bool  fullscreenApp_    = false;
     float taskbarHeightDip_ = 42.f;
     float dockedWidthDip_   = 1920.f;
-    bool  lightUi_          = false;
+    bool  lightTaskbar_     = false;  // colore della taskbar sotto la pillola
+    bool  lightTheme_       = false;  // tema con cui la barretta disegna sé stessa
 
     bool barVisible_       = true;
     bool quitting_         = false;

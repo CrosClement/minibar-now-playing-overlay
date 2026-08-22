@@ -64,6 +64,9 @@ Al primo avvio `minibar.exe` crea `minibar.ini` accanto a sé (quindi in `dist\`
 ```ini
 [general]
 mode=overlay          ; overlay | docked | taskbar
+theme=auto            ; auto | dark | light — auto segue il tema delle applicazioni
+                      ; di Windows e lo cambia a caldo; sopra un gioco può convenire
+                      ; forzare dark a prescindere
 preferred_app=Spotify ; sottostringa del SourceAppUserModelId della sessione preferita;
                       ; vuoto = segui la sessione corrente di sistema. Si sceglie anche
                       ; dal menu: tasto destro → Player
@@ -171,6 +174,19 @@ saturazione e luminosità leggibile sul fondo su cui finisce.
 Le copertine senza un colore vero (bianco e nero, collage senza dominante) non tingono
 niente e resta il verde di sempre. Il calcolo costa 144 pixel una volta per traccia: a
 riposo non cambia nulla.
+
+### Chiaro o scuro: due impostazioni, non una
+
+Windows tiene due valori separati, e MiniBar li usa per due cose diverse.
+`SystemUsesLightTheme` è il colore della shell, quindi della taskbar: decide il contrasto
+della pillola che ci sta sopra. `AppsUseLightTheme` è quello che le applicazioni devono
+seguire quando disegnano sé stesse, e decide il fondo che la barretta si disegna da sola in
+overlay e agganciata. Su Windows 11 si possono avere taskbar scura e applicazioni chiare, e
+in quel caso è giusto che le due cose non coincidano.
+
+Il cambio avviene a caldo, su `WM_SETTINGCHANGE`: si rileggono i due valori e si ridisegna,
+senza ricreare niente e senza riavviare. Con `theme=dark` o `theme=light` nell'INI si forza
+la scelta — sopra un gioco lo scuro conviene comunque.
 
 ### Le transizioni durano quanto serve, poi il timer sparisce
 

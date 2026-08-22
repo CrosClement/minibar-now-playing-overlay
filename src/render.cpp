@@ -205,7 +205,7 @@ Palette PaletteFor(const RenderState& st, const D2D1_COLOR_F* accent) {
 
     if (st.layout.kind == LayoutKind::Taskbar) {
         // Qui lo sfondo è la taskbar, che segue il tema di sistema.
-        if (st.lightUi) {
+        if (st.lightTaskbar) {
             p.bg        = {0.0f, 0.0f, 0.0f, st.hovered ? 0.10f : 0.05f};
             p.border    = {0.0f, 0.0f, 0.0f, 0.08f};
             p.title     = {0.09f, 0.09f, 0.10f, 1.0f};
@@ -231,16 +231,34 @@ Palette PaletteFor(const RenderState& st, const D2D1_COLOR_F* accent) {
         return p;
     }
 
-    // Overlay e docked disegnano il proprio fondo scuro: palette fissa.
+    // Overlay e docked disegnano il proprio fondo, e lo disegnano del colore che
+    // il sistema dice alle applicazioni di usare.
     const float bgAlpha = (st.layout.kind == LayoutKind::Docked) ? 0.98f : 0.90f;
-    p.bg       = {0.078f, 0.078f, 0.086f, bgAlpha};
-    p.border   = {1.0f, 1.0f, 1.0f, 0.09f};
-    p.title    = {0.96f, 0.96f, 0.97f, 1.0f};
-    p.artist   = {0.70f, 0.70f, 0.74f, 1.0f};
-    p.track    = {1.0f, 1.0f, 1.0f, 0.16f};
-    p.glyph    = {0.92f, 0.92f, 0.94f, 1.0f};
-    p.glyphOff = {1.0f, 1.0f, 1.0f, 0.25f};
-    p.artHole  = {1.0f, 1.0f, 1.0f, 0.10f};
+
+    if (st.lightTheme) {
+        p.bg        = {0.97f, 0.97f, 0.98f, bgAlpha};
+        p.border    = {0.0f, 0.0f, 0.0f, 0.12f};
+        p.title     = {0.09f, 0.09f, 0.10f, 1.0f};
+        p.artist    = {0.36f, 0.36f, 0.40f, 1.0f};
+        p.track     = {0.0f, 0.0f, 0.0f, 0.14f};
+        p.glyph     = {0.14f, 0.14f, 0.16f, 1.0f};
+        p.glyphOff  = {0.0f, 0.0f, 0.0f, 0.25f};
+        p.glyphDown = {0.0f, 0.0f, 0.0f, 1.0f};
+        p.artHole   = {0.0f, 0.0f, 0.0f, 0.10f};
+        p.vol       = {0.10f, 0.10f, 0.12f, 0.92f};
+        // Sopra la copertina la velatura del riquadro va chiara, per reggere i
+        // glifi scuri.
+        p.scrim = {0.98f, 0.98f, 1.0f, 0.66f};
+    } else {
+        p.bg       = {0.078f, 0.078f, 0.086f, bgAlpha};
+        p.border   = {1.0f, 1.0f, 1.0f, 0.09f};
+        p.title    = {0.96f, 0.96f, 0.97f, 1.0f};
+        p.artist   = {0.70f, 0.70f, 0.74f, 1.0f};
+        p.track    = {1.0f, 1.0f, 1.0f, 0.16f};
+        p.glyph    = {0.92f, 0.92f, 0.94f, 1.0f};
+        p.glyphOff = {1.0f, 1.0f, 1.0f, 0.25f};
+        p.artHole  = {1.0f, 1.0f, 1.0f, 0.10f};
+    }
 
     if (accent) {
         const D2D1_COLOR_F tint = *accent;
@@ -721,7 +739,8 @@ void Renderer::Draw(const RenderState& st) {
     // Dopo il decode: è lì che si scopre la tinta della copertina. Anche il
     // colore attraversa la dissolvenza, altrimenti la progress bar scatterebbe
     // al colore nuovo mentre la copertina sta ancora sfumando.
-    const bool   onLight = (st.layout.kind == LayoutKind::Taskbar) && st.lightUi;
+    const bool onLight =
+        (st.layout.kind == LayoutKind::Taskbar) ? st.lightTaskbar : st.lightTheme;
     D2D1_COLOR_F tint{};
     bool         tinted = false;
     if (accent_.valid) {

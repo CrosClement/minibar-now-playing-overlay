@@ -39,7 +39,8 @@ struct RenderState {
     bool         canNext   = false;
     bool         canToggle = false;
     bool         hasTrack  = false;
-    bool         lightUi   = false;  // taskbar chiara: serve la palette scura
+    bool         lightTaskbar = false;  // taskbar chiara: sopra ci vuole roba scura
+    bool         lightTheme   = false;  // tema app chiaro: la barretta si schiarisce
     double       posSec    = 0.0;
     double       durSec    = 0.0;
     float        opacity   = 1.0f;
