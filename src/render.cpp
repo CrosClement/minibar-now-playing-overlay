@@ -132,15 +132,72 @@ Geometry ComputeGeometry(const RenderState& st, float w, float h) {
     return g;
 }
 
+// ------------------------------------------------------------------ colore --
+void RgbToHsv(float r, float g, float b, float& h, float& s, float& v) {
+    const float mx = (r > g ? (r > b ? r : b) : (g > b ? g : b));
+    const float mn = (r < g ? (r < b ? r : b) : (g < b ? g : b));
+    const float d  = mx - mn;
+
+    v = mx;
+    s = (mx > 0.f) ? d / mx : 0.f;
+    if (d <= 0.f) {
+        h = 0.f;
+        return;
+    }
+    if (mx == r)
+        h = 60.f * std::fmod((g - b) / d, 6.f);
+    else if (mx == g)
+        h = 60.f * ((b - r) / d + 2.f);
+    else
+        h = 60.f * ((r - g) / d + 4.f);
+    if (h < 0.f) h += 360.f;
+}
+
+D2D1_COLOR_F HsvToRgb(float h, float s, float v) {
+    const float c = v * s;
+    const float x = c * (1.f - std::fabs(std::fmod(h / 60.f, 2.f) - 1.f));
+    const float m = v - c;
+
+    float r = 0.f, g = 0.f, b = 0.f;
+    if (h < 60.f) {
+        r = c; g = x;
+    } else if (h < 120.f) {
+        r = x; g = c;
+    } else if (h < 180.f) {
+        g = c; b = x;
+    } else if (h < 240.f) {
+        g = x; b = c;
+    } else if (h < 300.f) {
+        r = x; b = c;
+    } else {
+        r = c; b = x;
+    }
+    return D2D1::ColorF(r + m, g + m, b + m, 1.0f);
+}
+
+// La tinta della copertina non si usa com'è: su fondo scuro dev'essere accesa,
+// su fondo chiaro deve scurire, e in entrambi i casi restare satura quanto
+// basta per non sembrare fango.
+D2D1_COLOR_F AccentColor(const ArtAccent& a, bool onLight) {
+    const float s = Clamp(a.s, onLight ? 0.55f : 0.45f, 0.92f);
+    const float v = onLight ? Clamp(a.v, 0.45f, 0.72f) : Clamp(a.v, 0.62f, 0.95f);
+    return HsvToRgb(a.h, s, v);
+}
+
+D2D1_COLOR_F Mix(const D2D1_COLOR_F& base, const D2D1_COLOR_F& tint, float amount) {
+    return D2D1::ColorF(base.r + (tint.r - base.r) * amount, base.g + (tint.g - base.g) * amount,
+                        base.b + (tint.b - base.b) * amount, base.a);
+}
+
 // ----------------------------------------------------------------- palette --
 struct Palette {
     D2D1_COLOR_F bg, border, title, artist, track, fill, vol, glyph, glyphOff, glyphDown, artHole,
         scrim;
 };
 
-Palette PaletteFor(const RenderState& st) {
+Palette PaletteFor(const RenderState& st, const ArtAccent& accent) {
     Palette p{};
-    p.fill      = {0.114f, 0.725f, 0.329f, 1.0f};  // verde progress
+    p.fill      = {0.114f, 0.725f, 0.329f, 1.0f};  // verde progress, se la copertina non tinge
     p.vol       = {0.95f, 0.95f, 0.98f, 0.95f};    // volume: chiaro, mai confondibile
     p.glyphDown = {1.0f, 1.0f, 1.0f, 1.0f};
     p.scrim     = {0.02f, 0.02f, 0.03f, 0.62f};
@@ -168,6 +225,8 @@ Palette PaletteFor(const RenderState& st) {
             p.glyphOff = {1.0f, 1.0f, 1.0f, 0.25f};
             p.artHole  = {1.0f, 1.0f, 1.0f, 0.12f};
         }
+        // Dentro la taskbar il fondo è di Windows: si tinge solo la progress.
+        if (accent.valid) p.fill = AccentColor(accent, st.lightUi);
         return p;
     }
 
@@ -181,6 +240,15 @@ Palette PaletteFor(const RenderState& st) {
     p.glyph    = {0.92f, 0.92f, 0.94f, 1.0f};
     p.glyphOff = {1.0f, 1.0f, 1.0f, 0.25f};
     p.artHole  = {1.0f, 1.0f, 1.0f, 0.10f};
+
+    if (accent.valid) {
+        const D2D1_COLOR_F tint = AccentColor(accent, false);
+        p.fill                  = tint;
+        // Un soffio di colore nel fondo e nel bordo: si deve notare che la
+        // barretta "sa" cosa sta suonando, non che è stata dipinta.
+        p.bg     = Mix(p.bg, tint, 0.09f);
+        p.border = Mix(p.border, tint, 0.30f);
+    }
     return p;
 }
 
@@ -358,9 +426,107 @@ void Renderer::Resize(UINT widthPx, UINT heightPx, UINT dpi) {
 
 // ------------------------------------------------------------- copertina ---
 void Renderer::SetThumbnail(const std::vector<uint8_t>& bytes) {
-    artBytes_  = bytes;
-    artSidePx_ = 0;
-    art_       = nullptr;
+    artBytes_   = bytes;
+    artSidePx_  = 0;
+    art_        = nullptr;
+    accent_     = ArtAccent{};
+    accentDone_ = false;
+}
+
+// Colore dominante della copertina. Si guarda una miniatura di 12×12 pixel —
+// la scala la fa WIC insieme a quella della copertina vera — e si sceglie la
+// fascia di tinta che pesa di più, contando ogni pixel per quanto è saturo e
+// scartando grigi ed estremi. Costo: una volta per traccia, su 144 pixel.
+void Renderer::ComputeAccent(IWICBitmapSource* source) {
+    accent_ = ArtAccent{};
+    if (!source || !wic_) return;
+
+    constexpr UINT kSide = 12;
+
+    com_ptr<IWICBitmapScaler> scaler;
+    if (FAILED(wic_->CreateBitmapScaler(scaler.put()))) return;
+    if (FAILED(scaler->Initialize(source, kSide, kSide, WICBitmapInterpolationModeFant))) return;
+
+    com_ptr<IWICFormatConverter> converter;
+    if (FAILED(wic_->CreateFormatConverter(converter.put()))) return;
+    if (FAILED(converter->Initialize(scaler.get(), GUID_WICPixelFormat32bppBGRA,
+                                     WICBitmapDitherTypeNone, nullptr, 0.0,
+                                     WICBitmapPaletteTypeMedianCut)))
+        return;
+
+    uint8_t pixels[kSide * kSide * 4]{};
+    if (FAILED(converter->CopyPixels(nullptr, kSide * 4, sizeof(pixels), pixels))) return;
+
+    constexpr int kBuckets = 18;  // fasce di tinta da 20°
+    double        weight[kBuckets]{};
+    double        sumH[kBuckets]{}, sumS[kBuckets]{}, sumV[kBuckets]{};
+
+    for (UINT i = 0; i < kSide * kSide; ++i) {
+        const uint8_t* p = pixels + i * 4;
+        if (p[3] < 128) continue;  // trasparente: non fa colore
+
+        float h = 0.f, s = 0.f, v = 0.f;
+        RgbToHsv(p[2] / 255.f, p[1] / 255.f, p[0] / 255.f, h, s, v);
+        if (s < 0.18f || v < 0.12f || v > 0.97f) continue;  // grigi, nero, bianco
+
+        // Un pixel conta per quanto è saturo, e i mezzi toni contano più di
+        // quelli quasi neri o quasi bianchi.
+        const double w = s * (1.0 - std::fabs(v - 0.65f));
+        const int    k = static_cast<int>(h / (360.f / kBuckets)) % kBuckets;
+
+        weight[k] += w;
+        sumH[k] += h * w;
+        sumS[k] += s * w;
+        sumV[k] += v * w;
+    }
+
+    auto wrap = [](int k) { return (k + kBuckets) % kBuckets; };
+
+    // Una tinta a cavallo di due fasce non deve perdere metà del suo peso: si
+    // sceglie la fascia guardando anche le vicine, e si media su tutte e tre.
+    int    best   = -1;
+    double bestW  = 0.0;
+    double totalW = 0.0;
+    for (int k = 0; k < kBuckets; ++k) totalW += weight[k];
+    for (int k = 0; k < kBuckets; ++k) {
+        const double mass = weight[wrap(k - 1)] + weight[k] + weight[wrap(k + 1)];
+        if (weight[k] > 0.0 && mass > bestW) {
+            bestW = mass;
+            best  = k;
+        }
+    }
+
+    // Troppo poco colore, o colore sparso su tutta la ruota (copertine in bianco
+    // e nero, collage): non si tinge niente, resta il verde.
+    if (best < 0 || bestW < 1.5 || bestW < totalW * 0.20) return;
+
+    const double centerH = sumH[best] / weight[best];
+    double       sw = 0.0, hAcc = 0.0, sAcc = 0.0, vAcc = 0.0;
+    for (int d = -1; d <= 1; ++d) {
+        const int k = wrap(best + d);
+        if (weight[k] <= 0.0) continue;
+
+        // Le tinte si sommano su un cerchio: 350° e 10° sono vicine, non lontane.
+        double h = sumH[k] / weight[k];
+        if (h - centerH > 180.0)
+            h -= 360.0;
+        else if (centerH - h > 180.0)
+            h += 360.0;
+
+        sw += weight[k];
+        hAcc += h * weight[k];
+        sAcc += sumS[k];
+        vAcc += sumV[k];
+    }
+    if (sw <= 0.0) return;
+
+    double h = std::fmod(hAcc / sw, 360.0);
+    if (h < 0.0) h += 360.0;
+
+    accent_.h     = static_cast<float>(h);
+    accent_.s     = static_cast<float>(sAcc / sw);
+    accent_.v     = static_cast<float>(vAcc / sw);
+    accent_.valid = true;
 }
 
 void Renderer::DecodeThumbnail() {
@@ -379,6 +545,13 @@ void Renderer::DecodeThumbnail() {
         return;
     com_ptr<IWICBitmapFrameDecode> frame;
     if (FAILED(decoder->GetFrame(0, frame.put()))) return;
+
+    // La tinta si calcola sul fotogramma decodificato, una volta per copertina:
+    // un cambio di DPI o di layout ridecodifica l'immagine ma non il colore.
+    if (!accentDone_) {
+        ComputeAccent(frame.get());
+        accentDone_ = true;
+    }
 
     // Si scala subito alla dimensione di visualizzazione: in memoria non finisce
     // mai la copertina a piena risoluzione.
@@ -425,7 +598,6 @@ void Renderer::Draw(const RenderState& st) {
     const float    w     = widthPx_ * scale;
     const float    h     = heightPx_ * scale;
     const Geometry g     = ComputeGeometry(st, w, h);
-    const Palette  pal   = PaletteFor(st);
 
     // La copertina va rigenerata se cambia la dimensione a cui si mostra
     // (cambio layout o cambio DPI). Fuori da BeginDraw.
@@ -435,6 +607,9 @@ void Renderer::Draw(const RenderState& st) {
         artSidePx_ = wantSide;
         DecodeThumbnail();
     }
+
+    // Dopo il decode: è lì che si scopre la tinta della copertina.
+    const Palette pal = PaletteFor(st, accent_);
 
     rt_->BeginDraw();
     rt_->Clear(D2D1::ColorF(0, 0.0f));

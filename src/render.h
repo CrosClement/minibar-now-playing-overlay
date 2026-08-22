@@ -49,6 +49,17 @@ struct RenderState {
 
 enum class HitArea { None = 0, Drag, Prev, PlayPause, Next, Progress };
 
+// Tinta dominante della copertina, in HSV: il colore vero e proprio si ricava
+// al momento del disegno, perché quanto dev'essere chiaro dipende dal fondo su
+// cui finisce. `valid` è falso per le copertine senza un colore vero (bianco e
+// nero, scale di grigi): in quel caso si resta sul verde di sempre.
+struct ArtAccent {
+    float h     = 0.f;  // 0-360
+    float s     = 0.f;  // 0-1
+    float v     = 0.f;  // 0-1
+    bool  valid = false;
+};
+
 class Renderer {
 public:
     bool Init(HWND hwnd, UINT dpi);
@@ -65,10 +76,15 @@ public:
     // Dimensione in pixel richiesta da un layout a un certo DPI.
     static SIZE Measure(const LayoutSpec& spec, UINT dpi);
 
+    // Tinta dominante della copertina in cache; valida dopo il primo Draw che
+    // la decodifica.
+    const ArtAccent& Accent() const { return accent_; }
+
 private:
     bool CreateSurface();
     void ReleaseSurface();
     void DecodeThumbnail();
+    void ComputeAccent(IWICBitmapSource* source);
     void Present(float opacity);
     void DrawArt(const D2D1_RECT_F& rect, float radius);
 
@@ -98,4 +114,6 @@ private:
 
     winrt::com_ptr<ID2D1Bitmap> art_;
     std::vector<uint8_t>        artBytes_;
+    ArtAccent                   accent_;
+    bool                        accentDone_ = false;  // calcolato una volta per copertina
 };

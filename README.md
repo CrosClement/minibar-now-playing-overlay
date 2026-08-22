@@ -159,6 +159,19 @@ successivo: il marker lasciato su disco dice anche di quale player si trattava.
 
 ## Note di implementazione
 
+### Il colore viene dalla copertina
+
+La progress bar — e un soffio dello sfondo — prendono la tinta dominante dell'album. Si
+guarda una miniatura di 12×12 pixel, scalata da WIC insieme alla copertina che si disegna,
+e si sceglie la fascia di tinta che pesa di più: ogni pixel conta per quanto è saturo, i
+grigi e gli estremi non contano, e le fasce vicine si sommano perché un colore a cavallo
+di due non perda metà del suo peso. Il risultato viene riportato in un intervallo di
+saturazione e luminosità leggibile sul fondo su cui finisce.
+
+Le copertine senza un colore vero (bianco e nero, collage senza dominante) non tingono
+niente e resta il verde di sempre. Il calcolo costa 144 pixel una volta per traccia: a
+riposo non cambia nulla.
+
 ### Rendering: software invece di DirectComposition
 
 Il piano (§6.3) indica come strada raccomandata una swapchain di composizione DXGI +

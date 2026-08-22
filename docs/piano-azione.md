@@ -59,13 +59,25 @@ software e con lo zero-redraw a riposo.
 
 | # | Attività | Note | Fatto quando |
 |---|---|---|---|
-| 2.1 | Colore dominante dalla copertina | media/quantizzazione sui pixel della bitmap SMTC a ogni cambio traccia; tinta su progress bar e/o sfondo | il colore segue l'album, costo solo al cambio traccia |
+| 2.1 ✅ | Colore dominante dalla copertina | media/quantizzazione sui pixel della bitmap SMTC a ogni cambio traccia; tinta su progress bar e/o sfondo | il colore segue l'album, costo solo al cambio traccia |
 | 2.2 | Marquee dei titoli lunghi | scorrimento con dissolvenza ai bordi, **solo in hover** | a riposo zero ridisegni, come oggi |
 | 2.3 | Transizioni brevi | fade della copertina al cambio traccia, easing sull'espansione della pillola taskbar | timer attivo solo durante la transizione (poche centinaia di ms) |
 | 2.4 | Tema chiaro/scuro dal sistema | lettura di `AppsUseLightTheme` + notifica `WM_SETTINGCHANGE` | la barretta segue il tema senza riavvio |
 
 Criterio trasversale: dopo ogni voce, rimisurare RAM/CPU a riposo e confermare che i
 numeri della §3 reggono.
+
+**2.1** — La tinta si ricava da una miniatura di 12×12 pixel della copertina, scalata da
+WIC insieme a quella che si disegna: si sceglie la fascia di tinta che pesa di più
+(contando ogni pixel per quanto è saturo, ignorando grigi, nero e bianco, e sommando le
+fasce vicine perché un colore a cavallo di due non perda metà del suo peso). Il colore
+finale viene poi riportato in un intervallo di saturazione e luminosità leggibile sul
+fondo su cui finisce. Copertine senza un colore vero (bianco e nero, collage) non tingono
+niente: resta il verde. Costo: 144 pixel una volta per traccia.
+Verificato su copertine note — rosso pieno → rosso, blu → blu, teal con banda arancione →
+teal, scala di grigi → nessuna tinta, e sul campo con la copertina vera in riproduzione.
+Misure dopo la voce: private working set 5,98 MB, CPU a riposo 0,29 % di un core con la
+musica in riproduzione (0,018 % della macchina, cioè 0,0 % nel Task Manager).
 
 ## Fase 3 — Presentazione
 
