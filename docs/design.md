@@ -43,11 +43,13 @@ Tre modalità nella stessa applicazione, scelte dal menu contestuale:
   bordo, DPI e tema e sparisce insieme a lei.
 
 Obiettivo collaterale: mentre MiniBar è attiva la finestra del player viene minimizzata (o
-nascosta, opzionale), così non sta fra i piedi — lo schermo resta libero e i controlli
-restano sulla barretta. Che questo faccia anche risparmiare risorse dipende dal player e
-non va dato per scontato: misurato su Spotify (Windows 11 25H2), con la finestra
-minimizzata la RAM non cambia e la CPU non scende. Il valore di MiniBar è il suo costo, non
-il risparmio altrui.
+nascosta, opzionale), così non sta fra i piedi — e una finestra che non viene più composta
+smette di ridisegnarsi. Misurato su Spotify (Windows 11 25H2, musica in riproduzione,
+finestre da 60 s alternate su tre giri): circa il 10 % di un core con la finestra a schermo,
+circa il 2 % minimizzata. Il risparmio è di CPU, non di memoria (la RAM cala di qualche
+decina di MB su cinquecento), e vale quando la finestra starebbe altrimenti in primo piano:
+una finestra già coperta da altre costa quasi quanto una minimizzata. Nasconderla invece di
+minimizzarla non aggiunge nulla.
 
 ## 2 · Vincoli non negoziabili
 
@@ -99,7 +101,7 @@ parità di condizioni.
 | Identità del player | `SourceAppUserModelId` della sessione SMTC | Da lì si risale al processo (nome eseguibile o AUMID per le app impacchettate), quindi alla sua sessione nel mixer e alla sua finestra. Nessun nome di applicazione cablato. |
 | Hover | Polling `GetCursorPos` a ~10 Hz | Un hook globale del mouse è sospetto per gli anti-cheat; il polling costa due syscall e non si vede nel Task Manager. |
 | Restare topmost | `SetWinEventHook(EVENT_SYSTEM_FOREGROUND)` out-of-context + controllo raro | Reagire al cambio di foreground è pulito; un controllo ogni pochi secondi copre i giochi che si ri-promuovono senza cambiare focus. Mai spingere alla cieca. |
-| Player fuori dai piedi | Minimizza di default, `SW_HIDE` come opzione | Libera lo schermo; sul consumo del player non promette nulla (su Spotify misurato: nessun risparmio). Una finestra nascosta non è recuperabile da taskbar/Alt-Tab se MiniBar muore male: ripristino garantito allo shutdown e recupero all'avvio successivo tramite un marker su disco. |
+| Player fuori dai piedi | Minimizza di default, `SW_HIDE` come opzione | Libera lo schermo e taglia la CPU del player di 4-5 volte (Spotify misurato: ~10 % → ~2 % di un core); nascondere non risparmia più di minimizzare. Una finestra nascosta non è recuperabile da taskbar/Alt-Tab se MiniBar muore male: ripristino garantito allo shutdown e recupero all'avvio successivo tramite un marker su disco. |
 | Volume | `ISimpleAudioVolume` sulla sessione audio del processo | È la levetta del mixer di Windows: si muove solo il player, non il sistema. Interfacce create al primo uso, mai all'avvio. |
 | Configurazione | INI accanto all'eseguibile | Portable, zero dipendenze, editabile a mano. Le sole preferenze "di uso" (modalità, posizione, player) si salvano anche dal menu. |
 | Build | CMake + Ninja + MSVC con CRT statica | Eseguibile singolo senza VC Redist. Toolchain portable in `tools\` per lo sviluppo locale; preset separato con Visual Studio per la CI. |

@@ -198,10 +198,14 @@ and `play_on_switch`.
 ### It gets the player out of the way
 
 While MiniBar is running, the player's window is minimized (configurable), so it is not in
-the way: you keep the screen and you keep the controls. Whether that also saves resources
-depends on the player, and you should not count on it — we measured Spotify on Windows 11
-25H2, and with the window minimized its RAM does not change and its CPU does not go down.
-The number that holds is MiniBar's own cost, in the table above.
+the way — and a window that is no longer being composited stops redrawing. Measured on
+Spotify (Windows 11 25H2, music playing, 60-second windows alternated over three rounds):
+about 10 % of one core with the window on screen, about 2 % minimized. The saving is CPU,
+not memory — RAM drops by a few tens of MB out of five hundred — and it applies when the
+window would otherwise be on screen: a window already covered by others costs about the same
+as a minimized one. Hiding it instead of minimizing it (`hide_instead=1`) buys nothing more;
+it only takes the window out of the taskbar and Alt-Tab as well. MiniBar's own cost is in
+the table above.
 
 The window is **always** restored when MiniBar exits. If a previous run died badly with the
 window hidden, the next start recovers it: the marker left on disk also records which player
