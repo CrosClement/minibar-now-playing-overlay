@@ -21,6 +21,11 @@ bool ContainsNoCase(const std::wstring& haystack, const std::wstring& needle) {
     return false;
 }
 
+bool EqualsNoCase(const std::wstring& a, const std::wstring& b) {
+    return CompareStringOrdinal(a.c_str(), static_cast<int>(a.size()), b.c_str(),
+                                static_cast<int>(b.size()), TRUE) == CSTR_EQUAL;
+}
+
 namespace {
 
 std::wstring ReadStr(const std::wstring& file, const wchar_t* sec, const wchar_t* key,
@@ -133,6 +138,7 @@ void Config::Load() {
     autoMinimize    = ReadPlayerInt(path_, L"auto_minimize", 1) != 0;
     hideInstead     = ReadPlayerInt(path_, L"hide_instead", 0) != 0;
     launchIfMissing = ReadPlayerInt(path_, L"launch_if_missing", 0) != 0;
+    pauseOnSwitch   = ReadPlayerInt(path_, L"pause_on_switch", 1) != 0;
     launchPath      = ReadPlayerStr(path_, L"launch_path", L"");
 
     volumeStep = Clamp(ReadInt(path_, L"volume", L"wheel_step", 4), 1, 25);
@@ -165,6 +171,7 @@ void Config::WriteDefaultsIfMissing() {
     WritePrivateProfileStringW(kPlayerSection, L"auto_minimize", L"1", path_.c_str());
     WritePrivateProfileStringW(kPlayerSection, L"hide_instead", L"0", path_.c_str());
     WritePrivateProfileStringW(kPlayerSection, L"launch_if_missing", L"0", path_.c_str());
+    WritePrivateProfileStringW(kPlayerSection, L"pause_on_switch", L"1", path_.c_str());
     WritePrivateProfileStringW(kPlayerSection, L"launch_path", L"", path_.c_str());
     WritePrivateProfileStringW(L"volume", L"wheel_step", L"4", path_.c_str());
     WritePrivateProfileStringW(L"hotkey", L"enabled", L"0", path_.c_str());

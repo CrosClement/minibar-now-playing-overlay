@@ -38,6 +38,12 @@ opzioni, README e descrizione del repo.
 | 1.3 ✅ | Selettore di sessione | voce nel menu contestuale che elenca le sessioni SMTC attive e permette di bloccarsi su una | con due player attivi si sceglie quale mostrare |
 | 1.4 ✅ | Sezione INI rinominata | `[spotify]` → `[player]` con retrocompatibilità in lettura | vecchi INI continuano a funzionare |
 
+Estensione della 1.3 aggiunta su richiesta: cambiando player dal menu, quello che si lascia
+va **in pausa** (`SmtcService::PauseApp`, chiave `[player] pause_on_switch`, default acceso).
+Il confronto è fra il player seguito prima e quello seguito dopo, non fra le voci di menu:
+se la scelta risolve sullo stesso player — "Automatico" con una sola sessione attiva — non
+si sta lasciando indietro nessuno e non si tocca niente.
+
 L'identità del player è il `SourceAppUserModelId` della sessione SMTC: da lì si risale al
 processo (nome dell'eseguibile, o AUMID per le app impacchettate) e quindi sia alla sua
 sessione nel mixer sia alla sua finestra. Nessun nome di applicazione è più cablato nel

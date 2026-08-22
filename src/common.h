@@ -65,3 +65,6 @@ std::wstring ExeDir();
 
 // Confronto case-insensitive su sottostringa (per SourceAppUserModelId).
 bool ContainsNoCase(const std::wstring& haystack, const std::wstring& needle);
+
+// Uguaglianza case-insensitive, per confrontare due SourceAppUserModelId.
+bool EqualsNoCase(const std::wstring& a, const std::wstring& b);

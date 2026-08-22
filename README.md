@@ -91,6 +91,7 @@ auto_minimize=1       ; minimizza il player all'avvio di MiniBar
 hide_instead=0        ; 1 = SW_HIDE invece di SW_MINIMIZE (più aggressivo)
 launch_if_missing=0   ; avvia il player se non è in esecuzione
 launch_path=          ; eseguibile da avviare; vuoto = percorsi tipici dedotti dal nome
+pause_on_switch=1     ; cambiando player dal menu, mette in pausa quello che si lascia
 
 [volume]
 wheel_step=4          ; punti percentuali di volume per scatto di rotellina, 1-25
@@ -133,7 +134,7 @@ Si cambia modalità e aspetto dal menu col tasto destro, o dall'icona nella tray
 | **Mute del player** | **click col tasto centrale sulla barretta** |
 | Cambiare larghezza | **Ctrl** + rotellina sopra la barretta (solo in overlay), oppure `bar_width` / `tile_size` nell'INI |
 | Cambiare modalità o aspetto | tasto destro → Modalità / Aspetto |
-| Scegliere quale player seguire | tasto destro → Player (elenca le sessioni attive) |
+| Scegliere quale player seguire | tasto destro → Player (elenca le sessioni attive); quello che si lascia va in pausa |
 | Menu | tasto destro sulla barretta o sull'icona nella tray |
 | Mostrare/nascondere | doppio click sull'icona nella tray, o hotkey se attiva |
 
@@ -174,6 +175,16 @@ saturazione e luminosità leggibile sul fondo su cui finisce.
 Le copertine senza un colore vero (bianco e nero, collage senza dominante) non tingono
 niente e resta il verde di sempre. Il calcolo costa 144 pixel una volta per traccia: a
 riposo non cambia nulla.
+
+### Cambiando player, quello che si lascia si ferma
+
+Scegliendo un altro player dal menu, quello seguito fino a un attimo prima viene messo in
+pausa: senza, resterebbero a suonare in due sovrapposti. Il confronto è fra il player
+seguito prima e quello seguito dopo, non fra le voci di menu — se la scelta finisce sullo
+stesso player (tipicamente "Automatico" quando c'è una sola sessione attiva) non si sta
+lasciando indietro nessuno e non si tocca niente. La pausa arriva a tutte le sessioni di
+quell'app, perché un browser può averne più di una, e solo a quelle che stanno davvero
+suonando. Si disattiva con `pause_on_switch=0`.
 
 ### Chiaro o scuro: due impostazioni, non una
 

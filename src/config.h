@@ -32,7 +32,8 @@ struct Config {
     bool         autoMinimize    = true;
     bool         hideInstead     = false;
     bool         launchIfMissing = false;
-    std::wstring launchPath;  // vuoto = percorsi tipici dedotti dal nome
+    bool         pauseOnSwitch   = true;  // il player che si lascia va in pausa
+    std::wstring launchPath;              // vuoto = percorsi tipici dedotti dal nome
 
     // [volume]
     int volumeStep = 4;  // punti percentuali per scatto di rotellina

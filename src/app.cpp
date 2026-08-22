@@ -513,6 +513,8 @@ void App::ApplyPlayerPolicy() {
 void App::SelectPlayer(const std::wstring& appId) {
     if (appId == cfg_.preferredApp) return;
 
+    const std::wstring before = smtc_.CurrentAppId();
+
     // Il player di prima resta minimizzato — è quello che si voleva — ma se era
     // nascosto va ripristinato subito: senza finestra e senza marker non
     // sarebbe più raggiungibile.
@@ -520,6 +522,15 @@ void App::SelectPlayer(const std::wstring& appId) {
 
     cfg_.SavePreferredApp(appId);
     smtc_.SetPreferred(appId);
+
+    // Chi si lascia deve fermarsi, altrimenti suonano in due. Il confronto è
+    // fra il player seguito prima e quello seguito adesso, non fra le voci di
+    // menu: se la scelta risolve sullo stesso player — "Automatico" con una
+    // sola sessione attiva — non si sta lasciando nessuno e non si tocca
+    // niente.
+    const std::wstring after = smtc_.CurrentAppId();
+    if (cfg_.pauseOnSwitch && !before.empty() && !EqualsNoCase(before, after))
+        smtc_.PauseApp(before);
 
     playerApplied_ = false;
     ApplyPlayerPolicy();
