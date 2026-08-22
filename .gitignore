@@ -1,0 +1,17 @@
+# Toolchain portable e cache di download: si ricostruiscono con tools\get-msvc.ps1
+# (git e gh sono zip ufficiali estratti, vedi README)
+tools/msvc/
+tools/cmake/
+tools/ninja/
+tools/pwsh/
+tools/git/
+tools/gh/
+tools/_dl/
+
+# Output di build
+build/
+dist/
+
+# Configurazione locale e stato runtime
+*.ini
+*.flag

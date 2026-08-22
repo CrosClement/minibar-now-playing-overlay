@@ -1,0 +1,532 @@
+<title>Piano di implementazione MiniBar</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #f6f8f8;
+    --surface: #ffffff;
+    --surface-2: #eef3f2;
+    --ink: #17201f;
+    --muted: #5b6c6a;
+    --line: #dce4e3;
+    --accent: #0f766e;
+    --accent-soft: #d7ebe8;
+    --code-bg: #eef3f2;
+    --warn-bg: #fdf3e4;
+    --warn-line: #e5c891;
+    --warn-ink: #7a5410;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101716;
+      --surface: #17201f;
+      --surface-2: #1d2827;
+      --ink: #e6eceb;
+      --muted: #93a5a2;
+      --line: #263230;
+      --accent: #3ecfbf;
+      --accent-soft: #133b37;
+      --code-bg: #1d2827;
+      --warn-bg: #2b2312;
+      --warn-line: #6b5620;
+      --warn-ink: #e4c274;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101716;
+    --surface: #17201f;
+    --surface-2: #1d2827;
+    --ink: #e6eceb;
+    --muted: #93a5a2;
+    --line: #263230;
+    --accent: #3ecfbf;
+    --accent-soft: #133b37;
+    --code-bg: #1d2827;
+    --warn-bg: #2b2312;
+    --warn-line: #6b5620;
+    --warn-ink: #e4c274;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 1rem;
+    line-height: 1.65;
+    margin: 0;
+    padding: 3rem 1.25rem 5rem;
+  }
+  .page { max-width: 52rem; margin: 0 auto; }
+  p, li { max-width: 65ch; }
+
+  h1, h2, h3 {
+    font-family: "Archivo", "Segoe UI", system-ui, sans-serif;
+    line-height: 1.2;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  h1 { font-size: 2.2rem; font-weight: 700; margin: 0.5rem 0 0.75rem; }
+  h2 { font-size: 1.45rem; font-weight: 650; margin: 0 0 1rem; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.75rem 0 0.5rem; }
+
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+  }
+  .lede { font-size: 1.1rem; color: var(--muted); margin-top: 0; }
+
+  .vitals {
+    display: flex; flex-wrap: wrap; gap: 0.5rem 2rem;
+    border-block: 1px solid var(--line);
+    padding: 0.8rem 0;
+    margin: 2rem 0 3rem;
+    font-size: 0.9rem;
+  }
+  .vitals div { display: flex; gap: 0.5ch; }
+  .vitals dt { color: var(--muted); margin: 0; }
+  .vitals dd { margin: 0; font-weight: 600; }
+
+  section { margin-bottom: 3.25rem; }
+  .sec-label {
+    font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.35rem;
+  }
+
+  code, pre {
+    font-family: "IBM Plex Mono", Consolas, monospace;
+    font-size: 0.875em;
+  }
+  code {
+    background: var(--code-bg);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; }
+
+  .table-wrap { overflow-x: auto; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.92rem;
+    margin: 0.75rem 0 1rem;
+  }
+  th {
+    text-align: left;
+    font-family: "Archivo", sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 2px solid var(--line);
+    padding: 0.5rem 1rem 0.5rem 0;
+  }
+  td {
+    border-bottom: 1px solid var(--line);
+    padding: 0.55rem 1rem 0.55rem 0;
+    vertical-align: top;
+  }
+  td:last-child, th:last-child { padding-right: 0; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  .callout {
+    background: var(--warn-bg);
+    border: 1px solid var(--warn-line);
+    border-radius: 8px;
+    padding: 0.9rem 1.15rem;
+    color: var(--warn-ink);
+    font-size: 0.95rem;
+    margin: 1.25rem 0;
+  }
+  .callout strong { color: inherit; }
+
+  .modules {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 0.75rem;
+    margin: 1.25rem 0;
+  }
+  .module {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+  }
+  .module h4 {
+    margin: 0 0 0.3rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--accent);
+  }
+  .module p { margin: 0; font-size: 0.88rem; color: var(--muted); }
+
+  .milestone {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .milestone header {
+    display: flex; align-items: baseline; gap: 0.75rem; flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+  .milestone .m-id {
+    font-family: "Archivo", sans-serif;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 6px;
+    padding: 0.1rem 0.55rem;
+    font-size: 0.9rem;
+  }
+  .milestone h3 { margin: 0; }
+  .milestone .est { margin-left: auto; color: var(--muted); font-size: 0.85rem; }
+  .milestone ul { margin: 0.5rem 0; padding-left: 1.25rem; }
+  .milestone .accept {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px dashed var(--line);
+    font-size: 0.92rem;
+  }
+  .accept strong { color: var(--accent); }
+
+  ul { padding-left: 1.35rem; }
+  li { margin-bottom: 0.35rem; }
+  li::marker { color: var(--accent); }
+  a { color: var(--accent); }
+  hr { border: none; border-top: 1px solid var(--line); margin: 3rem 0; }
+</style>
+
+<div class="page">
+
+<header>
+  <p class="eyebrow">MiniBar · Specifica tecnica</p>
+  <h1>Piano di implementazione</h1>
+  <p class="lede">Mini player musicale nativo per Windows 11: una barretta overlay/docked che legge le API media di sistema, controlla la riproduzione e alleggerisce Spotify. Priorità assolute: minimalismo e prestazioni.</p>
+  <dl class="vitals">
+    <div><dt>Versione</dt><dd>1.1 — 20 ago 2026</dd></div>
+    <div><dt>Target</dt><dd>Windows 11 x64</dd></div>
+    <div><dt>Stack</dt><dd>C++20 · Win32 · Direct2D</dd></div>
+    <div><dt>Dipendenze</dt><dd>Solo Windows SDK</dd></div>
+    <div><dt>Stima totale</dt><dd class="num">7–10 giorni</dd></div>
+  </dl>
+</header>
+
+<section>
+  <p class="sec-label">Sezione 1</p>
+  <h2>Contesto e obiettivo</h2>
+  <p>MiniBar è una barretta discreta che mostra la traccia in riproduzione (copertina, titolo, artista, progress bar) e offre controlli play/pausa/prev/next all'hover. Due modalità nella stessa app:</p>
+  <ul>
+    <li><strong>Overlay</strong> — finestra always-on-top visibile sopra i giochi in borderless windowed. Non ruba mai il focus, è click-through quando il mouse non ci passa sopra, e riduce l'opacità a riposo.</li>
+    <li><strong>Docked</strong> — agganciata a un bordo dello schermo vicino alla taskbar, con spazio riservato: le finestre massimizzate la rispettano come fosse parte del sistema.</li>
+  </ul>
+  <p>Obiettivo secondario ma importante: quando MiniBar è attiva, la finestra di Spotify viene minimizzata (o nascosta, opzionale) così che il suo motore Chromium smetta di comporre frame — Spotify si riduce a un servizio audio in background. MiniBar non può ridurre la RAM di base di Spotify (nessuna app esterna può farlo), ma azzera il suo lavoro di rendering su GPU e CPU.</p>
+  <p>Uso personale; eventuale repo pubblica in un secondo momento.</p>
+</section>
+
+<section>
+  <p class="sec-label">Sezione 2</p>
+  <h2>Vincoli non negoziabili</h2>
+  <ul>
+    <li><strong>Nessuna DLL injection, nessun hook su DirectX/Vulkan, nessun <code>SetWindowsHookEx</code> globale.</strong> Sono i pattern che EAC, BattlEye e Vanguard classificano come cheat. Tutto ciò che tocca altri processi passa da API "da fuori": finestre topmost standard, <code>GetCursorPos</code>, <code>SetWinEventHook</code> in modalità <code>WINEVENT_OUTOFCONTEXT</code> (out-of-process, nessuna iniezione).</li>
+    <li><strong>Accettato:</strong> sopra il fullscreen esclusivo l'overlay non si vede. Nessun workaround: in quel caso resta la Game Bar di Windows.</li>
+    <li><strong>Nessuna dipendenza da account/API Spotify:</strong> niente OAuth, niente API key, niente Premium. La fonte dati sono le API media native di Windows (SMTC), quindi MiniBar funziona con qualunque player che le implementa, non solo Spotify.</li>
+    <li><strong>Tutto su disco E:</strong> l'app è portable. Eseguibile, file di configurazione e output di build vivono sotto <code>E:\CLAUDE\MINIBAR</code>. Nessun installer, nessuna scrittura in AppData o registro (eccetto l'eventuale voce di autostart, opzionale e disattivata di default).</li>
+  </ul>
+</section>
+
+<section>
+  <p class="sec-label">Sezione 3</p>
+  <h2>Budget prestazioni</h2>
+  <p>Questi numeri sono requisiti, non speranze. Ogni milestone si chiude solo se il budget è rispettato.</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Metrica</th><th>Target</th><th>Come si misura</th></tr>
+    <tr><td>RAM (working set a regime)</td><td class="num">&lt; 15 MB</td><td>Task Manager dopo 10 min di riproduzione</td></tr>
+    <tr><td>CPU a riposo</td><td class="num">≈ 0,0 %</td><td>Task Manager, media su 60 s senza hover</td></tr>
+    <tr><td>GPU tra un ridisegno e l'altro</td><td class="num">0 %</td><td>Task Manager scheda GPU / PresentMon</td></tr>
+    <tr><td>Dimensione eseguibile</td><td class="num">≤ 2 MB</td><td>Build Release, CRT statica</td></tr>
+    <tr><td>Avvio (processo → barretta visibile)</td><td class="num">&lt; 200 ms</td><td>Timestamp log</td></tr>
+    <tr><td>Impatto FPS su gioco in borderless</td><td class="num">non misurabile</td><td>Confronto frametime con/senza overlay</td></tr>
+  </table>
+  </div>
+  <p>Il principio architetturale che li rende raggiungibili: <strong>zero lavoro se non cambia niente</strong>. Nessun render loop; l'app ridisegna solo su evento (cambio traccia, hover, tick della progress bar) e tra un evento e l'altro dorme nel message loop.</p>
+</section>
+
+<section>
+  <p class="sec-label">Sezione 4</p>
+  <h2>Stack e decisioni già prese</h2>
+  <p>Queste decisioni sono state discusse e chiuse in fase di analisi: il piano le assume, non vanno rimesse in discussione senza motivo nuovo.</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Decisione</th><th>Scelta</th><th>Motivo</th></tr>
+    <tr><td>Linguaggio / UI</td><td>C++20, Win32 puro + Direct2D/DirectComposition</td><td>WPF/.NET costa 80–120 MB di runtime; Electron/Tauri peggio. Il nativo sta in ~10 MB e parla direttamente col DWM. Scartati esplicitamente WPF (primo candidato) e WinUI 3 (pessimo supporto a finestre trasparenti click-through).</td></tr>
+    <tr><td>Fonte dati</td><td>SMTC via C++/WinRT (header nel Windows SDK)</td><td>Nessuna autenticazione, player-agnostico, event-driven.</td></tr>
+    <tr><td>Hover detection</td><td>Polling <code>GetCursorPos</code> a ~10 Hz</td><td>Un hook globale del mouse è sospetto per gli anti-cheat (specialmente Vanguard). Il polling costa due syscall e il Task Manager segna 0,00 %.</td></tr>
+    <tr><td>Guerra del topmost</td><td><code>SetWinEventHook(EVENT_SYSTEM_FOREGROUND)</code> + fallback raro</td><td>Reagire al cambio di foreground è pulito; un fallback ogni 5–10 s copre i giochi che si ri-promuovono topmost senza cambiare focus.</td></tr>
+    <tr><td>Alleggerimento Spotify</td><td>Minimizza di default, <code>SW_HIDE</code> come opzione</td><td>Stesso guadagno (Chromium smette di comporre in entrambi i casi), ma una finestra nascosta non è recuperabile da taskbar/Alt-Tab se MiniBar muore male. Ripristino garantito allo shutdown.</td></tr>
+    <tr><td>Configurazione</td><td>File INI accanto all'eseguibile</td><td>Portabile (vincolo disco E), zero dipendenze (<code>GetPrivateProfileString</code>), editabile a mano.</td></tr>
+    <tr><td>Build</td><td>CMake + MSVC (VS 2022), <code>/MT</code> (CRT statica)</td><td>Eseguibile singolo senza VC Redist, coerente col vincolo portable.</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <p class="sec-label">Sezione 5</p>
+  <h2>Architettura</h2>
+  <p>Otto moduli piccoli con responsabilità nette. Il flusso: <code>SmtcService</code> e gli input utente alimentano <code>App</code> (stato centrale), che decide quando <code>Renderer</code> deve ridisegnare e quando <code>WindowManager</code> deve cambiare stili.</p>
+  <div class="modules">
+    <div class="module"><h4>main.cpp</h4><p>Entry point, single-instance (mutex nominato), message loop, init C++/WinRT (apartment STA).</p></div>
+    <div class="module"><h4>App</h4><p>Stato centrale (traccia corrente, playback, modalità, hover). Orchestenza eventi → ridisegni. Nessuna logica di piattaforma.</p></div>
+    <div class="module"><h4>SmtcService</h4><p>Wrapper di <code>GlobalSystemMediaTransportControlsSessionManager</code>: sessioni, metadati, eventi, comandi, filtro per app preferita.</p></div>
+    <div class="module"><h4>Renderer</h4><p>Direct2D + DirectComposition: layout della barretta, testo, copertina, progress bar. Disegna solo su richiesta di App.</p></div>
+    <div class="module"><h4>WindowManager</h4><p>Creazione finestra, stili estesi, toggle click-through, opacità, posizionamento, DPI per-monitor.</p></div>
+    <div class="module"><h4>AppBar</h4><p>Modalità docked: registrazione <code>SHAppBarMessage</code>, riserva dello spazio schermo, gestione callback.</p></div>
+    <div class="module"><h4>ForegroundWatch</h4><p><code>SetWinEventHook</code> out-of-context + fallback: mantiene l'overlay sopra il gioco.</p></div>
+    <div class="module"><h4>SpotifyManager</h4><p>Trova la finestra di Spotify, minimizza/nasconde/ripristina, avvio opzionale con <code>--minimized</code>.</p></div>
+  </div>
+  <h3>Modello di threading</h3>
+  <p>Un solo thread UI con il message loop. Gli eventi WinRT delle SMTC arrivano su thread del threadpool: gli handler <strong>non toccano mai lo stato direttamente</strong> — impacchettano i dati e li rimandano al thread UI con <code>PostMessage(WM_APP + n)</code>. Il polling del cursore e il fallback topmost usano <code>SetTimer</code> (niente thread dedicati). Risultato: zero lock nello stato dell'app, zero race.</p>
+</section>
+
+<section>
+  <p class="sec-label">Sezione 6</p>
+  <h2>Dettagli implementativi chiave</h2>
+
+  <h3>6.1 · SMTC: sessioni, metadati, comandi</h3>
+  <pre><code>auto mgr = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
+auto session = mgr.GetCurrentSession();   // può essere null
+// Eventi da agganciare:
+//   mgr.CurrentSessionChanged
+//   session.MediaPropertiesChanged      → titolo, artista, thumbnail
+//   session.PlaybackInfoChanged         → playing/paused, comandi abilitati
+//   session.TimelinePropertiesChanged   → posizione, durata</code></pre>
+  <ul>
+    <li>Metadati: <code>TryGetMediaPropertiesAsync()</code> → <code>Title</code>, <code>Artist</code>, <code>Thumbnail</code> (un <code>IRandomAccessStreamReference</code>, non base64).</li>
+    <li>Comandi: <code>TryTogglePlayPauseAsync()</code>, <code>TrySkipNextAsync()</code>, <code>TrySkipPreviousAsync()</code>. Il seek (<code>TryChangePlaybackPositionAsync</code>) è opzionale: verificare a runtime <code>PlaybackInfo.Controls.IsPlaybackPositionEnabled</code>.</li>
+    <li>Sessioni multiple: anche un video YouTube nel browser registra una sessione. Config <code>preferred_app</code> (default <code>Spotify</code>): se tra <code>mgr.GetSessions()</code> ce n'è una il cui <code>SourceAppUserModelId</code> contiene la stringa, vince; altrimenti si usa <code>GetCurrentSession()</code>.</li>
+  </ul>
+
+  <h3>6.2 · Progress bar: interpolazione obbligatoria</h3>
+  <p>Le SMTC non emettono un tick continuo: <code>TimelineProperties</code> fornisce <code>Position</code> + <code>LastUpdatedTime</code>. In più Spotify aggiorna la timeline pigramente quando è minimizzato — e MiniBar lo minimizza di proposito, quindi il problema è garantito. La barra visualizzata è sempre calcolata localmente:</p>
+  <pre><code>shown = Position + (now − LastUpdatedTime)   // solo se Playing
+clamp(shown, 0, EndTime)</code></pre>
+  <p>Un <code>SetTimer</code> a 1 Hz fa avanzare la barra (ridisegnando solo il rettangolo della progress); ogni <code>TimelinePropertiesChanged</code> ri-sincronizza. Il timer è attivo solo in stato Playing e con barretta visibile.</p>
+
+  <h3>6.3 · Finestra overlay</h3>
+  <ul>
+    <li>Stili: <code>WS_POPUP</code> + <code>WS_EX_TOPMOST | WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW</code> (niente focus, niente Alt-Tab, niente taskbar).</li>
+    <li>Rendering raccomandato: <code>WS_EX_NOREDIRECTIONBITMAP</code> + swapchain DXGI in modalità composition + DirectComposition per alpha per-pixel accelerata. Variante di ripiego più semplice (accettabile, il costo per una barretta è irrisorio): <code>WS_EX_LAYERED</code> + <code>UpdateLayeredWindow</code> con bitmap ARGB premoltiplicata disegnata da D2D su render target WIC.</li>
+    <li>Swapchain: <code>CreateSwapChainForComposition</code> con <code>DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL</code> (le composition swapchain accettano solo il flip model). <code>Present()</code> viene chiamata esclusivamente quando si ridisegna: in pausa il message loop dorme e non si presenta mai — il budget GPU a riposo è strutturale, non un'ottimizzazione.</li>
+    <li>Mostrare sempre con <code>ShowWindow(SW_SHOWNOACTIVATE)</code>.</li>
+    <li>Opacità: piena all'hover, ridotta (configurabile, default ~55 %) a riposo, con transizione breve.</li>
+    <li>DPI: manifest <strong>Per-Monitor V2</strong>, gestione <code>WM_DPICHANGED</code>. Testare con due monitor a scale diverse.</li>
+  </ul>
+
+  <h3>6.4 · Click-through e hover</h3>
+  <p>Paradosso da risolvere: una finestra con <code>WS_EX_TRANSPARENT</code> non riceve eventi mouse, quindi non può accorgersi dell'hover. Soluzione (decisa, vedi Sezione 4): timer a ~10 Hz che confronta <code>GetCursorPos</code> col rect della finestra.</p>
+  <ul>
+    <li>Cursore dentro → rimuovi <code>WS_EX_TRANSPARENT</code>, mostra i controlli, opacità piena.</li>
+    <li>Cursore fuori (con isteresi di qualche centinaio di ms per evitare flicker) → ripristina <code>WS_EX_TRANSPARENT</code>, nascondi i controlli, opacità a riposo.</li>
+  </ul>
+
+  <h3>6.5 · Restare sopra il gioco</h3>
+  <ul>
+    <li>Via principale: <code>SetWinEventHook(EVENT_SYSTEM_FOREGROUND, …, WINEVENT_OUTOFCONTEXT)</code> — notifica via messaggio, nessuna iniezione nel processo del gioco. Al cambio di foreground: un <code>SetWindowPos(HWND_TOPMOST, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE)</code>.</li>
+    <li>Fallback: ogni 5–10 s verifica se la barretta è finita sotto (camminando la z-order con <code>GetWindow</code>) e solo in quel caso ri-asserisce. Mai spingere alla cieca a frequenza alta.</li>
+    <li>Nota UIPI: sopra finestre di processi elevati il re-assert può fallire silenziosamente; accettato (caso raro per i giochi).</li>
+  </ul>
+
+  <h3>6.6 · Modalità docked (AppBar)</h3>
+  <ul>
+    <li><code>SHAppBarMessage</code>: <code>ABM_NEW</code> → <code>ABM_QUERYPOS</code> → <code>ABM_SETPOS</code> per riservare una striscia su un bordo (default: bottom, sopra la taskbar); <code>ABM_REMOVE</code> allo switch di modalità o all'uscita.</li>
+    <li>Gestire il messaggio di callback (<code>ABN_POSCHANGED</code> ecc.) per taskbar spostata/nascosta e cambi di risoluzione.</li>
+    <li><strong>Bizze note su Windows 11:</strong> la taskbar è riscritta in XAML e <code>SHAppBarMessage</code> funziona per retrocompatibilità, ma può restituire RECT sfalsati sui monitor secondari con DPI diverso dal primario. Non fidarsi di rect memorizzati: ricalcolare tutto a ogni <code>WM_DPICHANGED</code> e a ogni notifica ABN.</li>
+    <li>In docked il click-through è disattivato e l'opacità è sempre piena: è UI "di sistema", non overlay.</li>
+    <li><strong>Chiarezza col committente:</strong> le deskband (estensioni vere della taskbar) sono morte su Windows 11. "Docked" = finestra adiacente alla taskbar con spazio riservato. Visivamente equivalente, tecnicamente separata.</li>
+  </ul>
+
+  <h3>6.7 · SpotifyManager</h3>
+  <ul>
+    <li>Trovare la finestra: enumerare le top-level (<code>EnumWindows</code>), match sul processo proprietario <code>spotify.exe</code> (via <code>GetWindowThreadProcessId</code> + <code>QueryFullProcessImageName</code>). Non affidarsi alla classe: CEF crea <strong>molte</strong> top-level invisibili con lo stesso nome (<code>Chrome_WidgetWin_1</code>). Filtro completo per la finestra principale: processo <code>spotify.exe</code> <strong>e</strong> <code>WS_VISIBLE</code> <strong>e</strong> niente <code>WS_EX_TOOLWINDOW</code> <strong>e</strong> rect non vuoto <strong>e</strong> titolo non vuoto.</li>
+    <li>All'attivazione (configurabile): <code>SW_MINIMIZE</code> (default) oppure <code>SW_HIDE</code> (opzione "aggressiva"). Alla chiusura di MiniBar: <strong>sempre</strong> ripristino (<code>SW_RESTORE</code>/<code>SW_SHOW</code>), anche su crash gestito (handler di uscita + il ripristino gira pure all'avvio successivo se trova una finestra Spotify nascosta orfana).</li>
+    <li>Se Spotify non è in esecuzione (opzione off di default): avvio con flag <code>--minimized</code>.</li>
+  </ul>
+
+  <h3>6.8 · Pipeline copertine</h3>
+  <p>Stream SMTC → WIC (<code>IWICImagingFactory</code> + <code>IWICBitmapScaler</code>, interpolazione Fant) → scala <strong>alla dimensione di visualizzazione</strong> (es. 56×56 px effettivi, moltiplicati per il DPI) → <code>ID2D1Bitmap</code>. Mai caricare in VRAM l'immagine a piena risoluzione. Cache dell'ultima bitmap: si rigenera solo al cambio traccia o di DPI.</p>
+
+  <h3>6.9 · Configurazione e interazione</h3>
+  <pre><code>; minibar.ini — accanto all'eseguibile
+[general]  mode=overlay|docked   preferred_app=Spotify
+[overlay]  x=…  y=…  idle_opacity=140   ; 0–255
+[docked]   edge=bottom|left|right
+[spotify]  auto_minimize=1  hide_instead=0  launch_if_missing=0</code></pre>
+  <ul>
+    <li>Trascinamento della barretta in overlay (drag su zona non-controlli), posizione persistita.</li>
+    <li>Menu contestuale col tasto destro: switch modalità, toggle auto-minimize, esci. Niente finestra impostazioni nella v1: si edita l'INI.</li>
+    <li>Hotkey globale opzionale (<code>RegisterHotKey</code>) per mostrare/nascondere la barretta.</li>
+    <li><strong>Icona nella system tray</strong> (<code>Shell_NotifyIconW</code>) con menu: mostra/nascondi barretta, ripristina Spotify, esci. È la scialuppa di salvataggio: con Spotify nascosto (<code>hide_instead=1</code>) e barretta nascosta via hotkey, senza tray l'utente non avrebbe più alcuna UI raggiungibile. Costo in risorse: praticamente zero.</li>
+  </ul>
+</section>
+
+<section>
+  <p class="sec-label">Sezione 7</p>
+  <h2>Struttura del repository</h2>
+  <pre><code>E:\CLAUDE\MINIBAR\
+├── CMakeLists.txt
+├── docs\piano-implementazione.html      (questo documento)
+├── assets\minibar.ico
+└── src\
+    ├── main.cpp          entry, mutex single-instance, message loop
+    ├── app.h/.cpp        stato centrale e orchestrazione
+    ├── smtc.h/.cpp       SmtcService (C++/WinRT)
+    ├── window.h/.cpp     WindowManager: stili, click-through, DPI
+    ├── render.h/.cpp     Renderer: D2D/DComp, layout barretta
+    ├── appbar.h/.cpp     modalità docked
+    ├── foreground.h/.cpp ForegroundWatch
+    ├── spotify.h/.cpp    SpotifyManager
+    ├── config.h/.cpp     lettura/scrittura INI
+    ├── minibar.rc        risorse, icona
+    └── minibar.manifest  DPI Per-Monitor V2</code></pre>
+  <p>Toolchain: Visual Studio 2022 (workload Desktop C++) + Windows 11 SDK. Build: <code>cmake --preset release</code> con output in <code>E:\CLAUDE\MINIBAR\build</code>. Nessun pacchetto esterno: C++/WinRT, D2D, DComp e WIC sono tutti nel SDK.</p>
+</section>
+
+<section>
+  <p class="sec-label">Sezione 8</p>
+  <h2>Milestone</h2>
+  <p>Sette milestone in sequenza, ognuna con criteri di accettazione verificabili. Le stime assumono uno sviluppatore che conosce Win32 ma non necessariamente C++/WinRT.</p>
+
+  <div class="milestone">
+    <header><span class="m-id">M0</span><h3>Scheletro</h3><span class="est num">0,5–1 g</span></header>
+    <ul>
+      <li>Progetto CMake, manifest DPI, CRT statica, single-instance.</li>
+      <li>Finestra <code>WS_POPUP</code> topmost/noactivate/toolwindow con rettangolo D2D di prova e alpha per-pixel.</li>
+      <li>Menu contestuale con "Esci".</li>
+    </ul>
+    <p class="accept"><strong>Accettazione:</strong> la barretta vuota resta sopra un gioco in borderless senza rubargli il focus; exe ≤ 2 MB; RAM &lt; 10 MB.</p>
+  </div>
+
+  <div class="milestone">
+    <header><span class="m-id">M1</span><h3>SmtcService</h3><span class="est num">1 g</span></header>
+    <ul>
+      <li>Session manager, filtro app preferita, tutti gli eventi agganciati con marshalling via <code>PostMessage</code>.</li>
+      <li>Interpolazione timeline con timer 1 Hz condizionato allo stato Playing.</li>
+      <li>Comandi play/pausa/prev/next funzionanti (test da debug output, senza UI).</li>
+    </ul>
+    <p class="accept"><strong>Accettazione:</strong> cambio traccia su Spotify (anche minimizzato) riflesso negli eventi entro 1 s; posizione interpolata con deriva &lt; 1 s su 3 minuti; nessun crash chiudendo/riaprendo Spotify.</p>
+  </div>
+
+  <div class="milestone">
+    <header><span class="m-id">M2</span><h3>Rendering</h3><span class="est num">1–2 g</span></header>
+    <ul>
+      <li>Layout: copertina, titolo (ellissi se lungo), artista, progress bar.</li>
+      <li>Pipeline copertine WIC con scaling alla dimensione di visualizzazione.</li>
+      <li>Ridisegno solo su evento; tick 1 Hz ridisegna solo la progress.</li>
+    </ul>
+    <p class="accept"><strong>Accettazione:</strong> GPU a 0 % tra i ridisegni; testo nitido a 100 % e 150 % di scala; copertina corretta al cambio traccia.</p>
+  </div>
+
+  <div class="milestone">
+    <header><span class="m-id">M3</span><h3>Interazione</h3><span class="est num">1 g</span></header>
+    <ul>
+      <li>Polling cursore 10 Hz, toggle <code>WS_EX_TRANSPARENT</code> con isteresi.</li>
+      <li>Controlli all'hover collegati a SmtcService; opacità piena/ridotta con transizione.</li>
+      <li>Drag della barretta e persistenza posizione nell'INI.</li>
+    </ul>
+    <p class="accept"><strong>Accettazione:</strong> con cursore altrove i click passano al gioco sottostante; i pulsanti rispondono al primo click; CPU a riposo 0,0 % nel Task Manager.</p>
+  </div>
+
+  <div class="milestone">
+    <header><span class="m-id">M4</span><h3>Robustezza overlay</h3><span class="est num">1 g</span></header>
+    <ul>
+      <li><code>SetWinEventHook</code> foreground + fallback z-order 5–10 s.</li>
+      <li>Gestione <code>WM_DPICHANGED</code>, multi-monitor, cambio risoluzione.</li>
+    </ul>
+    <p class="accept"><strong>Accettazione:</strong> dopo Alt-Tab ripetuti su 2–3 giochi borderless la barretta è sempre visibile; frametime del gioco invariato (PresentMon); nessun re-assert quando non serve.</p>
+  </div>
+
+  <div class="milestone">
+    <header><span class="m-id">M5</span><h3>Modalità docked</h3><span class="est num">1–2 g</span></header>
+    <ul>
+      <li>AppBar su bordo configurabile con spazio riservato; switch runtime overlay ⇄ docked dal menu.</li>
+      <li>Reazione a taskbar spostata/nascosta e cambi di risoluzione.</li>
+    </ul>
+    <p class="accept"><strong>Accettazione:</strong> una finestra massimizzata non copre la barretta docked; dopo lo switch di modalità e ritorno, nessuno spazio riservato orfano; uscita pulita (<code>ABM_REMOVE</code> sempre eseguito).</p>
+  </div>
+
+  <div class="milestone">
+    <header><span class="m-id">M6</span><h3>SpotifyManager e rifiniture</h3><span class="est num">1 g</span></header>
+    <ul>
+      <li>Auto-minimize (default) / hide (opzione) con ripristino garantito, anche di finestre orfane al riavvio.</li>
+      <li>Avvio opzionale di Spotify con <code>--minimized</code>; hotkey globale opzionale.</li>
+      <li>Icona tray con menu (mostra/nascondi barretta, ripristina Spotify, esci).</li>
+      <li>Verifica finale del budget prestazioni, sessione di soak test di 2+ ore.</li>
+    </ul>
+    <p class="accept"><strong>Accettazione:</strong> con MiniBar attiva e Spotify minimizzato, GPU di Spotify a 0 %; chiusura di MiniBar (anche brusca + riavvio) ripristina sempre la finestra; con barretta nascosta via hotkey e Spotify nascosto, dalla tray si ripristina tutto; tutti i target della Sezione 3 verificati e annotati.</p>
+  </div>
+</section>
+
+<section>
+  <p class="sec-label">Sezione 9</p>
+  <h2>Rischi e mitigazioni</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Rischio</th><th>Probabilità</th><th>Mitigazione</th></tr>
+    <tr><td>Spotify aggiorna la timeline in modo pigro/incoerente da minimizzato</td><td>Alta (attesa)</td><td>Interpolazione locale già obbligatoria (6.2); re-sync su ogni evento.</td></tr>
+    <tr><td>Thumbnail SMTC null o in ritardo al cambio traccia</td><td>Media</td><td>Placeholder neutro; retry al successivo <code>MediaPropertiesChanged</code>.</td></tr>
+    <tr><td>Giochi che si ri-promuovono topmost senza cambio focus</td><td>Media</td><td>Fallback z-order (6.5). Se un titolo specifico resiste, documentare e accettare.</td></tr>
+    <tr><td>Interazioni AppBar con la taskbar Win11 (auto-hide, monitor multipli)</td><td>Media</td><td>Gestire le notifiche ABN; test con taskbar auto-hide sin da M5.</td></tr>
+    <tr><td>Falso positivo anti-cheat</td><td>Molto bassa</td><td>Nessuna iniezione/hook per design; solo API pubbliche out-of-process. Stesso profilo di rischio di EarTrumpet o del flyout volume.</td></tr>
+    <tr><td>Spotify cambia il flag <code>--minimized</code> o il comportamento finestra</td><td>Bassa</td><td>Funzione opzionale e isolata in SpotifyManager; degrada senza rompere il resto.</td></tr>
+  </table>
+  </div>
+</section>
+
+<section>
+  <p class="sec-label">Sezione 10</p>
+  <h2>Fuori scope (v1)</h2>
+  <ul>
+    <li>Visibilità sopra il fullscreen esclusivo (per design, vedi vincoli).</li>
+    <li>Client Spotify alternativo (librespot: richiede Premium, zona grigia TOS).</li>
+    <li>Testi/lyrics, code di riproduzione, like/salvataggio brani (SMTC non li espone).</li>
+    <li>Finestra impostazioni grafica (v1 = INI + menu contestuale).</li>
+    <li>Installer, auto-update, piattaforme diverse da Windows 11 x64.</li>
+  </ul>
+  <div class="callout"><strong>Nota per chi implementa:</strong> ogni volta che una feature sembra richiedere un hook, un'iniezione o un thread in più, la risposta giusta è quasi certamente "no": rientra nei vincoli della Sezione 2 o nel principio zero-lavoro-a-riposo della Sezione 3.</div>
+</section>
+
+<section>
+  <p class="sec-label">Sezione 11</p>
+  <h2>Riferimenti API</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Area</th><th>API</th></tr>
+    <tr><td>Media</td><td><code>Windows.Media.Control</code> — <code>GlobalSystemMediaTransportControlsSessionManager</code> e tipi collegati (C++/WinRT)</td></tr>
+    <tr><td>Finestre</td><td><code>CreateWindowExW</code>, <code>SetWindowLongPtrW (GWL_EXSTYLE)</code>, <code>SetWindowPos</code>, <code>SetLayeredWindowAttributes</code> / <code>UpdateLayeredWindow</code></td></tr>
+    <tr><td>Rendering</td><td>Direct2D 1.1 (<code>ID2D1DeviceContext</code>), DirectComposition (<code>IDCompositionDevice</code>), DXGI, DirectWrite, WIC</td></tr>
+    <tr><td>Overlay</td><td><code>SetWinEventHook</code> (<code>EVENT_SYSTEM_FOREGROUND</code>, <code>WINEVENT_OUTOFCONTEXT</code>), <code>GetCursorPos</code>, <code>SetTimer</code></td></tr>
+    <tr><td>Docked</td><td><code>SHAppBarMessage</code> (<code>ABM_NEW</code>, <code>ABM_QUERYPOS</code>, <code>ABM_SETPOS</code>, <code>ABM_REMOVE</code>)</td></tr>
+    <tr><td>Spotify</td><td><code>EnumWindows</code>, <code>GetWindowThreadProcessId</code>, <code>QueryFullProcessImageNameW</code>, <code>ShowWindow</code>, <code>CreateProcessW</code></td></tr>
+    <tr><td>Varie</td><td><code>CreateMutexW</code> (single instance), <code>RegisterHotKey</code>, <code>Shell_NotifyIconW</code> (tray), <code>GetPrivateProfileStringW</code>, <code>WM_DPICHANGED</code></td></tr>
+  </table>
+  </div>
+</section>
+
+</div>
