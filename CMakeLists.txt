@@ -22,6 +22,7 @@ add_executable(minibar WIN32
     src/appbar.cpp
     src/foreground.cpp
     src/player.cpp
+    src/startup.cpp
     src/volume.cpp
     src/minibar.rc
 )

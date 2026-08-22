@@ -9,6 +9,7 @@
 #include "player.h"
 #include "render.h"
 #include "smtc.h"
+#include "startup.h"
 #include "volume.h"
 
 class App {

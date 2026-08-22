@@ -221,6 +221,25 @@ void Config::SaveAutoMinimize(bool v) {
     WriteInt(path_, kPlayerSection, L"auto_minimize", v ? 1 : 0);
 }
 
+void Config::SaveTheme(Theme t) {
+    EnsurePath();
+    theme = t;
+    const wchar_t* name = (t == Theme::Dark) ? L"dark" : (t == Theme::Light) ? L"light" : L"auto";
+    WritePrivateProfileStringW(L"general", L"theme", name, path_.c_str());
+}
+
+void Config::SavePauseOnSwitch(bool v) {
+    EnsurePath();
+    pauseOnSwitch = v;
+    WriteInt(path_, kPlayerSection, L"pause_on_switch", v ? 1 : 0);
+}
+
+void Config::SaveIdleOpacity(int value) {
+    EnsurePath();
+    idleOpacity = Clamp(value, 20, 255);
+    WriteInt(path_, L"overlay", L"idle_opacity", idleOpacity);
+}
+
 void Config::SavePreferredApp(const std::wstring& app) {
     EnsurePath();
     preferredApp = app;

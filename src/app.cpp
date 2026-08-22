@@ -561,11 +561,28 @@ void App::ShowMenu(POINT screenPt) {
     ms.layout       = cfg_.overlayLayout;
     ms.autoMinimize = cfg_.autoMinimize;
     ms.barVisible   = barVisible_;
-    ms.sessions     = smtc_.ListSessions();
-    ms.preferred    = cfg_.preferredApp;
-    ms.playerName   = PlayerManager::FriendlyName(PlayerKey());
+    ms.sessions      = smtc_.ListSessions();
+    ms.preferred     = cfg_.preferredApp;
+    ms.playerName    = PlayerManager::FriendlyName(PlayerKey());
+    ms.theme         = cfg_.theme;
+    ms.pauseOnSwitch = cfg_.pauseOnSwitch;
+    ms.idleOpacity   = cfg_.idleOpacity;
+    ms.autostart     = startup::Enabled();
 
     const UINT cmd = win::ShowContextMenu(hwnd_, screenPt, ms);
+
+    // Scatti di opacità: la voce scelta dice quale elemento di kIdleSteps è.
+    if (cmd >= IDM_OPACITY_FIRST && cmd <= IDM_OPACITY_LAST) {
+        const size_t index = cmd - IDM_OPACITY_FIRST;
+        if (index < std::size(kIdleSteps)) {
+            cfg_.SaveIdleOpacity(kIdleSteps[index].value);
+            if (cfg_.mode == BarMode::Overlay && !hovered_) {
+                targetOpacity_ = cfg_.idleOpacity / 255.0f;
+                StartAnim();
+            }
+        }
+        return;
+    }
 
     if (cmd == IDM_SESSION_AUTO) {
         SelectPlayer({});  // nessun vincolo: si segue la sessione di sistema
@@ -600,6 +617,27 @@ void App::OnCommand(UINT id) {
         case IDM_PLAYER_RESTORE:
             player_.Restore();
             playerApplied_ = false;
+            break;
+
+        case IDM_PAUSE_TOGGLE: cfg_.SavePauseOnSwitch(!cfg_.pauseOnSwitch); break;
+
+        case IDM_THEME_AUTO:
+        case IDM_THEME_DARK:
+        case IDM_THEME_LIGHT:
+            cfg_.SaveTheme(id == IDM_THEME_DARK    ? Theme::Dark
+                           : id == IDM_THEME_LIGHT ? Theme::Light
+                                                   : Theme::Auto);
+            RefreshTheme();
+            Redraw();
+            break;
+
+        case IDM_AUTOSTART:
+            // Lo stato vero è l'esistenza della scorciatoia, non un flag nostro:
+            // si legge quello anche per decidere cosa fare adesso.
+            if (startup::Enabled())
+                startup::Disable();
+            else
+                startup::Enable();
             break;
 
         case IDM_OPEN_INI:

@@ -37,6 +37,16 @@ enum : UINT {
     IDM_PLAYER_RESTORE = 1008,
     IDM_OPEN_INI       = 1009,
     IDM_EXIT           = 1010,
+    IDM_PAUSE_TOGGLE   = 1011,
+    IDM_AUTOSTART      = 1012,
+
+    IDM_THEME_AUTO  = 1020,
+    IDM_THEME_DARK  = 1021,
+    IDM_THEME_LIGHT = 1022,
+
+    // Opacità a riposo: quattro scatti, il valore vero sta in kIdleSteps.
+    IDM_OPACITY_FIRST = 1030,
+    IDM_OPACITY_LAST  = 1033,
 
     // Selettore di sessione: la voce automatica più una per player attivo.
     IDM_SESSION_AUTO  = 1100,
@@ -58,6 +68,13 @@ enum : UINT_PTR {
 
 constexpr UINT kTrayIconId = 1;
 constexpr int  kHotkeyId   = 1;
+
+// Scatti di opacità a riposo offerti dal menu, in percentuale e in 0-255.
+struct IdleStep {
+    int percent;
+    int value;
+};
+constexpr IdleStep kIdleSteps[] = {{25, 64}, {55, 140}, {80, 204}, {100, 255}};
 
 // Directory dell'eseguibile, con backslash finale. L'app è portable: tutto
 // (INI compreso) vive accanto al binario.

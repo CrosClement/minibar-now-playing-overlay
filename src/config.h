@@ -52,6 +52,9 @@ struct Config {
 
     void SavePosition(int nx, int ny);
     void SavePreferredApp(const std::wstring& app);
+    void SaveTheme(Theme t);
+    void SavePauseOnSwitch(bool v);
+    void SaveIdleOpacity(int value);
     void SaveMode(BarMode m);
     void SaveOverlayLayout(OverlayLayout l);
     void SaveAutoMinimize(bool v);

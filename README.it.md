@@ -146,8 +146,20 @@ nella tray.
 | Cambiare larghezza | **Ctrl** + rotellina sopra la barretta (solo in overlay), oppure `bar_width` / `tile_size` nell'INI |
 | Cambiare modalità o aspetto | tasto destro → **Mode** (modalità) / **Look** (aspetto) |
 | Scegliere quale player seguire | tasto destro → **Player** (elenca le sessioni attive, più **Automatic**); quello che si lascia va in pausa |
+| Chiaro o scuro | tasto destro → **Theme**: **Follow Windows**, **Dark**, **Light** |
+| Quanto sbiadire a riposo | tasto destro → **Idle opacity** (solo in overlay) |
+| Avviare con Windows | tasto destro → **Start with Windows** |
 | Menu | tasto destro sulla barretta o sull'icona nella tray |
 | Mostrare/nascondere | doppio click sull'icona nella tray, o hotkey se attiva |
+
+Tutto ciò che sta nel menu è anche una riga dell'INI, e l'INI resta il posto per i dettagli
+— misure esatte, hotkey, bordo di aggancio. Il menu copre quello che si cambia davvero
+usando l'applicazione.
+
+**Start with Windows** mette una scorciatoia nella cartella Esecuzione automatica (quella
+che si apre con `shell:startup`) che punta a dov'è adesso `minibar.exe`. Niente registro,
+niente installazione: si può cancellare a mano senza confondere MiniBar, perché la spunta
+nel menu legge se il file esiste, non un'impostazione a parte.
 
 La rotellina (volume e ridimensionamento) dipende dall'impostazione di Windows "scorri le
 finestre inattive quando ci passo sopra", attiva per impostazione predefinita.

@@ -159,19 +159,58 @@ UINT ShowContextMenu(HWND hwnd, POINT screenPt, const MenuState& state) {
     }
     CheckMenuRadioItem(players, IDM_SESSION_AUTO, id - 1, checked, MF_BYCOMMAND);
 
-    const std::wstring who = state.playerName.empty() ? L"the player" : state.playerName;
+    HMENU themes = CreatePopupMenu();
+    AppendMenuW(themes, MF_STRING, IDM_THEME_AUTO, L"Follow Windows");
+    AppendMenuW(themes, MF_STRING, IDM_THEME_DARK, L"Dark");
+    AppendMenuW(themes, MF_STRING, IDM_THEME_LIGHT, L"Light");
+    CheckMenuRadioItem(themes, IDM_THEME_AUTO, IDM_THEME_LIGHT,
+                       state.theme == Theme::Dark    ? IDM_THEME_DARK
+                       : state.theme == Theme::Light ? IDM_THEME_LIGHT
+                                                     : IDM_THEME_AUTO,
+                       MF_BYCOMMAND);
+
+    // Opacità a riposo: quattro scatti bastano, e chi vuole un valore preciso
+    // ha comunque l'INI.
+    HMENU opacity  = CreatePopupMenu();
+    UINT  opacityId = IDM_OPACITY_FIRST;
+    UINT  opacityChecked = IDM_OPACITY_FIRST;
+    int   bestGap  = 1000;
+    for (const auto& step : kIdleSteps) {
+        wchar_t label[16]{};
+        swprintf_s(label, L"%d%%", step.percent);
+        AppendMenuW(opacity, MF_STRING, opacityId, label);
+
+        const int gap = (state.idleOpacity > step.value) ? state.idleOpacity - step.value
+                                                         : step.value - state.idleOpacity;
+        if (gap < bestGap) {
+            bestGap        = gap;
+            opacityChecked = opacityId;
+        }
+        ++opacityId;
+    }
+    CheckMenuRadioItem(opacity, IDM_OPACITY_FIRST, opacityId - 1, opacityChecked, MF_BYCOMMAND);
+
+    const std::wstring who     = state.playerName.empty() ? L"the player" : state.playerName;
+    const bool         overlay = state.mode == BarMode::Overlay;
 
     AppendMenuW(menu, MF_STRING, IDM_BAR_TOGGLE, state.barVisible ? L"Hide bar" : L"Show bar");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(modes), L"Mode");
-    AppendMenuW(menu, MF_POPUP | (state.mode == BarMode::Overlay ? MF_ENABLED : MF_GRAYED),
+    AppendMenuW(menu, MF_POPUP | (overlay ? MF_ENABLED : MF_GRAYED),
                 reinterpret_cast<UINT_PTR>(looks), L"Look");
     AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(players), L"Player");
+    AppendMenuW(menu, MF_POPUP, reinterpret_cast<UINT_PTR>(themes), L"Theme");
+    AppendMenuW(menu, MF_POPUP | (overlay ? MF_ENABLED : MF_GRAYED),
+                reinterpret_cast<UINT_PTR>(opacity), L"Idle opacity");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
     AppendMenuW(menu, MF_STRING | (state.autoMinimize ? MF_CHECKED : MF_UNCHECKED),
                 IDM_AUTOMIN_TOGGLE, (L"Minimize " + who).c_str());
     AppendMenuW(menu, MF_STRING, IDM_PLAYER_RESTORE, (L"Restore " + who).c_str());
+    AppendMenuW(menu, MF_STRING | (state.pauseOnSwitch ? MF_CHECKED : MF_UNCHECKED),
+                IDM_PAUSE_TOGGLE, L"Pause the player you leave");
     AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+    AppendMenuW(menu, MF_STRING | (state.autostart ? MF_CHECKED : MF_UNCHECKED), IDM_AUTOSTART,
+                L"Start with Windows");
     AppendMenuW(menu, MF_STRING, IDM_OPEN_INI, L"Open minibar.ini");
     AppendMenuW(menu, MF_STRING, IDM_EXIT, L"Exit");
 

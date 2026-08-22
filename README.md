@@ -104,11 +104,26 @@ Switch mode and look from the right-click menu, or from the tray icon.
 | Resize | **Ctrl** + wheel over the bar (overlay only), or `bar_width` / `tile_size` in the INI |
 | Change mode or look | right-click → Mode / Look |
 | Choose which player to follow | right-click → Player; the one you leave is paused |
+| Light or dark | right-click → Theme (Follow Windows / Dark / Light) |
+| Dim it more or less at rest | right-click → Idle opacity (overlay only) |
+| Start with Windows | right-click → Start with Windows |
 | Menu | right-click the bar, or the tray icon |
 | Show/hide | double-click the tray icon, or the hotkey if enabled |
 
+Everything in that menu is also a line in `minibar.ini`, and the file stays the place for the
+details — exact sizes, hotkey, docking edge. The menu covers what you actually change while
+using it.
+
 The wheel (volume and resizing) relies on the Windows setting "scroll inactive windows when
 I hover over them", which is on by default.
+
+### Starting with Windows, without the registry
+
+**Start with Windows** puts a shortcut in your Startup folder — the one you can open with
+`shell:startup` — pointing at wherever `minibar.exe` currently is. Nothing is written to the
+registry, nothing is installed, and you can delete that shortcut by hand without MiniBar
+getting confused: the menu reads the checkbox state from whether the file exists, not from a
+setting of its own.
 
 ### The volume is the player's, not the system's
 

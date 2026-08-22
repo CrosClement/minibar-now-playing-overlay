@@ -52,6 +52,12 @@ struct MenuState {
     std::vector<std::wstring> sessions;
     std::wstring              preferred;
     std::wstring              playerName;
+
+    // Impostazioni raggiungibili dal menu, così l'INI resta per i dettagli.
+    Theme theme         = Theme::Auto;
+    bool  pauseOnSwitch = true;
+    bool  autostart     = false;
+    int   idleOpacity   = 140;
 };
 
 // Ritorna l'id del comando scelto, 0 se annullato. Gli id delle sessioni
