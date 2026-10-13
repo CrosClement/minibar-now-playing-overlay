@@ -21,6 +21,7 @@ constexpr UINT kRevealMs = 2500;
 
 // Passo per tick delle transizioni: ~130 ms l'opacità, ~110 ms la pillola.
 constexpr float kOpacityStep = 0.12f;
+constexpr float kFadeStep    = 0.03f;  // auto_fade: ~530 ms, dissolvenza più dolce
 constexpr float kExpandStep  = 0.15f;
 
 // Partenza e arrivo morbidi: l'apertura della pillola non deve sembrare uno
@@ -101,16 +102,21 @@ void App::Shutdown() {
     DestroyBar();
 }
 
+UINT App::EffDpi(UINT realDpi) const {
+    if (cfg_.mode != BarMode::Overlay || cfg_.uiScale == 100) return realDpi;
+    return static_cast<UINT>(realDpi * cfg_.uiScale / 100.0 + 0.5);
+}
+
 // ------------------------------------------------------------ ciclo di vita --
 bool App::CreateBar() {
     RefreshTheme();
 
     const UINT dpiGuess = GetDpiForSystem() ? GetDpiForSystem() : 96;
-    const SIZE guess    = Renderer::Measure(BuildLayout(), dpiGuess);
+    const SIZE guess    = Renderer::Measure(BuildLayout(), EffDpi(dpiGuess));
 
     hwnd_ = win::CreateBarWindow(inst_, this, guess.cx, guess.cy);
     if (!hwnd_) return false;
-    dpi_ = win::DpiFor(hwnd_);
+    dpi_ = EffDpi(win::DpiFor(hwnd_));
 
     switch (cfg_.mode) {
         case BarMode::Docked:
@@ -134,7 +140,7 @@ bool App::CreateBar() {
             ResizeToLayout();
             PositionOverlay();
             win::SetClickThrough(hwnd_, true);
-            opacity_ = targetOpacity_ = cfg_.idleOpacity / 255.0f;
+            opacity_ = targetOpacity_ = RestOpacity();
             foreground_.Start(hwnd_);
             break;
     }
@@ -423,7 +429,7 @@ void App::SetHovered(bool hovered) {
             // riceve eventi mouse, quindi l'hover si scopre col polling e lo
             // stile si toglie solo quando serve davvero.
             win::SetClickThrough(hwnd_, !hovered);
-            targetOpacity_ = hovered ? 1.0f : cfg_.idleOpacity / 255.0f;
+            targetOpacity_ = hovered ? 1.0f : RestOpacity();
             StartAnim();
             break;
 
@@ -448,7 +454,10 @@ void App::OnCursorTick() {
 
     RECT r{};
     if (!GetWindowRect(hwnd_, &r)) return;
-    const bool inside = PtInRect(&r, cursor) != 0;
+    bool inside = PtInRect(&r, cursor) != 0;
+    // auto_fade: una barretta invisibile resta click-through, non intercetta il mouse.
+    if (cfg_.autoFade && cfg_.mode == BarMode::Overlay && !hovered_ && opacity_ < 0.05f)
+        inside = false;
 
     if (inside) {
         if (unhoverArmed_) {
@@ -462,14 +471,20 @@ void App::OnCursorTick() {
     }
 }
 
-void App::Reveal() {
+void App::Reveal(UINT ms, bool instant) {
     // Solo in overlay: docked e taskbar sono già a opacità piena.
     if (!hwnd_ || cfg_.mode != BarMode::Overlay || !barVisible_) return;
+    if (ms == 0) ms = cfg_.autoFade ? static_cast<UINT>(cfg_.fadeShowMs) : kRevealMs;
 
-    // Piena subito, non in dissolvenza: il punto è farsi trovare.
-    opacity_ = targetOpacity_ = 1.0f;
-    SetTimer(hwnd_, IDT_REVEAL, kRevealMs, nullptr);
-    Redraw();
+    targetOpacity_ = 1.0f;
+    if (instant) {
+        // Piena subito, non in dissolvenza: il punto è farsi trovare.
+        opacity_ = 1.0f;
+        Redraw();
+    } else {
+        StartAnim();  // dissolvenza in entrata
+    }
+    SetTimer(hwnd_, IDT_REVEAL, ms, nullptr);
 }
 
 void App::RefreshTheme() {
@@ -499,7 +514,8 @@ void App::StartAnim() {
 void App::OnAnimTick() {
     bool busy = false;
 
-    if (opacity_ != targetOpacity_) busy |= !StepToward(opacity_, targetOpacity_, kOpacityStep);
+    if (opacity_ != targetOpacity_)
+        busy |= !StepToward(opacity_, targetOpacity_, cfg_.autoFade ? kFadeStep : kOpacityStep);
 
     if (expand_ != expandTarget_) {
         busy |= !StepToward(expand_, expandTarget_, kExpandStep);
@@ -623,7 +639,7 @@ void App::ShowMenu(POINT screenPt) {
         if (index < std::size(kIdleSteps)) {
             cfg_.SaveIdleOpacity(kIdleSteps[index].value);
             if (cfg_.mode == BarMode::Overlay && !hovered_) {
-                targetOpacity_ = cfg_.idleOpacity / 255.0f;
+                targetOpacity_ = RestOpacity();
                 StartAnim();
             }
         }
@@ -752,6 +768,10 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
                 SwapThumbnail({});
             }
             if (titleChanged) SyncMarquee();  // titolo nuovo: la corsa riparte da capo
+            if (titleChanged && hasTrack_ && cfg_.autoFade) {
+                endShown_ = false;
+                Reveal(0, false);  // inizio brano: appare in dissolvenza, poi sparisce
+            }
             Redraw();
             return 0;
         }
@@ -791,7 +811,19 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_TIMER:
             switch (wParam) {
                 case IDT_CURSOR: OnCursorTick(); break;
-                case IDT_TICK: Redraw(); break;
+                case IDT_TICK:
+                    if (cfg_.autoFade && cfg_.mode == BarMode::Overlay && playing_ && durSec_ > 0) {
+                        const double remaining = durSec_ - ShownPosition();
+                        if (remaining > cfg_.endWarnSec + 2) {
+                            endShown_ = false;  // riarmato (seek indietro o nuovo brano)
+                        } else if (!endShown_ && cfg_.endWarnSec > 0 && remaining > 0) {
+                            endShown_ = true;
+                            // Resta visibile fino alla fine + qualche secondo sul brano dopo.
+                            Reveal(static_cast<UINT>(remaining * 1000) + cfg_.fadeShowMs, false);
+                        }
+                    }
+                    Redraw();
+                    break;
                 case IDT_ANIM: OnAnimTick(); break;
                 case IDT_UNHOVER:
                     KillTimer(hwnd_, IDT_UNHOVER);
@@ -815,7 +847,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
                     KillTimer(hwnd_, IDT_REVEAL);
                     // Se nel frattempo il mouse è arrivato sopra, comanda l'hover.
                     if (!hovered_ && cfg_.mode == BarMode::Overlay) {
-                        targetOpacity_ = cfg_.idleOpacity / 255.0f;
+                        targetOpacity_ = RestOpacity();
                         StartAnim();
                     }
                     break;
@@ -956,7 +988,7 @@ LRESULT App::Handle(UINT msg, WPARAM wParam, LPARAM lParam) {
             return 0;
 
         case WM_DPICHANGED: {
-            dpi_ = HIWORD(wParam);
+            dpi_ = EffDpi(HIWORD(wParam));
             if (cfg_.mode == BarMode::Docked) {
                 RepositionDock();
             } else if (cfg_.mode == BarMode::Taskbar) {

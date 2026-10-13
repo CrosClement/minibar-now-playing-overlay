@@ -21,6 +21,10 @@ struct Config {
     int           x             = INT_MIN;  // INT_MIN = posizione automatica
     int           y             = INT_MIN;
     int           idleOpacity   = 140;  // 0-255
+    int           uiScale       = 100;  // % — ingrandisce TUTTO l'overlay (testo, copertina, barra)
+    bool          autoFade      = false;  // true = invisibile a riposo, appare a inizio/fine brano
+    int           fadeShowMs    = 5000;   // durata di visibilità a inizio brano (e dopo la fine)
+    int           endWarnSec    = 10;     // riappare quando mancano N secondi alla fine
 
     // [docked]
     DockEdge edge = DockEdge::Bottom;

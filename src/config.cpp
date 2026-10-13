@@ -130,6 +130,10 @@ void Config::Load() {
     x             = ReadInt(path_, L"overlay", L"x", INT_MIN);
     y             = ReadInt(path_, L"overlay", L"y", INT_MIN);
     idleOpacity   = Clamp(ReadInt(path_, L"overlay", L"idle_opacity", 140), 20, 255);
+    uiScale       = Clamp(ReadInt(path_, L"overlay", L"ui_scale", 100), 50, 400);
+    autoFade      = ReadInt(path_, L"overlay", L"auto_fade", 0) != 0;
+    fadeShowMs    = Clamp(ReadInt(path_, L"overlay", L"fade_show_ms", 5000), 1000, 30000);
+    endWarnSec    = Clamp(ReadInt(path_, L"overlay", L"end_warn_sec", 10), 0, 60);
 
     edge = ParseEdge(ReadStr(path_, L"docked", L"edge", L"bottom"));
 
@@ -167,6 +171,10 @@ void Config::WriteDefaultsIfMissing() {
     WritePrivateProfileStringW(L"overlay", L"bar_width", L"293", path_.c_str());
     WritePrivateProfileStringW(L"overlay", L"tile_size", L"92", path_.c_str());
     WritePrivateProfileStringW(L"overlay", L"idle_opacity", L"140", path_.c_str());
+    WritePrivateProfileStringW(L"overlay", L"ui_scale", L"100", path_.c_str());
+    WritePrivateProfileStringW(L"overlay", L"auto_fade", L"0", path_.c_str());
+    WritePrivateProfileStringW(L"overlay", L"fade_show_ms", L"5000", path_.c_str());
+    WritePrivateProfileStringW(L"overlay", L"end_warn_sec", L"10", path_.c_str());
     WritePrivateProfileStringW(L"docked", L"edge", L"bottom", path_.c_str());
     WritePrivateProfileStringW(L"taskbar", L"anchor", L"auto", path_.c_str());
     WritePrivateProfileStringW(kPlayerSection, L"auto_minimize", L"1", path_.c_str());

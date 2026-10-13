@@ -59,7 +59,13 @@ private:
     // istante, poi torna a sbiadire. Serve all'avvio e a ogni riapertura,
     // perché con idle_opacity bassa una barretta appena comparsa è
     // praticamente invisibile e non si trova.
-    void Reveal();
+    void Reveal(UINT ms = 0, bool instant = true);
+
+    // Opacità "a riposo": quella di idle_opacity, oppure 0 con auto_fade.
+    float RestOpacity() const { return cfg_.autoFade ? 0.f : cfg_.idleOpacity / 255.0f; }
+
+    // DPI effettivo: in overlay è il DPI reale moltiplicato per ui_scale.
+    UINT EffDpi(UINT realDpi) const;
     void ShowMenu(POINT screenPt);
     void OnCommand(UINT id);
     void ToggleBarVisible();
@@ -136,6 +142,7 @@ private:
     bool  lightTaskbar_     = false;  // colore della taskbar sotto la pillola
     bool  lightTheme_       = false;  // tema con cui la barretta disegna sé stessa
 
+    bool endShown_         = false;  // auto_fade: "fine brano" già mostrata per questa traccia
     bool barVisible_       = true;
     bool quitting_         = false;
     bool playerApplied_    = false;
